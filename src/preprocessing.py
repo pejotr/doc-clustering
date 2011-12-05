@@ -16,8 +16,8 @@ def compute_tfidf(document, documents):
     d = len(documents)
 
     for term in document['terms']:
-        occ = [ x for x in documents if x['tf'].freq(term) > 0 ]
-        val = document['tf'].freq(term) * log10( d / len(occ) )
+        occ = [ x for x, y in documents.iteritems() if y['tf'][term] > 0 ]
+        val = document['tf'][term] * math.log10( d / len(occ) )
         tfidf[term] = val
 
     return tfidf
@@ -36,7 +36,7 @@ def process_documents(path):
     for infile in listing:
         raw_doc    = nltk.clean_html(open(path + infile, 'r').read())
         word_list  = nltk.word_tokenize(re.sub('[^A-Za-z0-9 ]', '', raw_doc))
-        terms_list = [ x for x in word_list if x.lower() not in stopwords.words('english')]
+        terms_list = [ x.lower() for x in word_list if x.lower() not in stopwords.words('english')]
 
         stemmes = []
         for term in terms_list :
@@ -45,6 +45,6 @@ def process_documents(path):
         fdist = FreqDist(word.lower() for word in stemmes)
         documents[infile] = { 'docname': infile,  'terms': stemmes, 'tf': fdist, 'tfidf': None  }
 
-    for doc in documents:
-        doc['tfidf'] = compute_tfidf(doc, documents)
-    
+    for key, doc in documents.iteritems():
+        documents[key]['tfidf'] = compute_tfidf(doc ,documents)
+
