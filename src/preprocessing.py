@@ -26,7 +26,7 @@ def compute_tfidf(document, documents):
 
     return tfidf
 
-
+# TODO: zmiennic kolejnosc /usuwanie interpunkcji/parsowanie
 def process_documents(path):
     logging.info("Using documents from \"" + path + "\" directory ")
     
@@ -58,7 +58,7 @@ def process_documents(path):
 
     return documents, allterms
 
-# term musi zawierac liste wszystkich termow wraz z liczba wystapien !!!
+# TODO: term musi zawierac liste wszystkich termow wraz z liczba wystapien !!!
 # Tylko 2000 najczesciej wystepujacych wyrazow !!!
 
 def cluster(documents, terms):
