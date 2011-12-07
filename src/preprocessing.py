@@ -21,12 +21,17 @@ def compute_tfidf(document, documents):
 
     for term in document['terms']:
         occ = [ x for x, y in documents.iteritems() if y['tf'][term] > 0 ]
-        val = document['tf'][term] * math.log10( d / len(occ) )
+
+        print term + " : " + str(len(occ)) 
+
+        val = document['tf'].freq(term) * math.log10( d / len(occ) )
         tfidf[term] = val
 
     return tfidf
 
-# TODO: zmiennic kolejnosc /usuwanie interpunkcji/parsowanie
+def evaluate_html():
+    pass
+
 def process_documents(path):
     logging.info("Using documents from \"" + path + "\" directory ")
     
@@ -37,46 +42,51 @@ def process_documents(path):
     allterms  = {}
     stemmer   = PorterStemmer()
     listing   = os.listdir(path)
+    allfreq   = FreqDist()
 
     # retriving document content - discarding structure
+    logging.info("Processing files...")
     for infile in listing:
+        logging.info("\tReading document " + infile)
         raw_doc    = nltk.clean_html(open(path + infile, 'r').read())
-        word_list  = nltk.word_tokenize(re.sub('[^A-Za-z0-9 ]', '', raw_doc))
+        #raw_doc    = open(path + infile, 'r').read()
+        word_list  = nltk.word_tokenize(re.sub('[^A-Za-z0-9 ]', ' ', raw_doc))
         terms_list = [ x.lower() for x in word_list if x.lower() not in stopwords.words('english')]
 
         stemmes = []
+        logging.info("\tStemming words...")
         for term in terms_list :
             stemmes[len(stemmes):] = [stemmer.stem(term)]
             allterms[stemmer.stem(term)] = 0
 
         fdist = FreqDist(word.lower() for word in stemmes)
+        allfreq.update(word.lower() for word in stemmes)
+    
         documents[infile] = { 'docname': infile,  'terms': stemmes, 'tf': fdist, 'tfidf': None  }
 
     for key, doc in documents.iteritems():
         doctfidf = compute_tfidf(doc ,documents)
         documents[key]['tfidf'] = dict(allterms.items() + doctfidf.items())
 
-    return documents, allterms
+    return documents, allfreq
 
-# TODO: term musi zawierac liste wszystkich termow wraz z liczba wystapien !!!
-# Tylko 2000 najczesciej wystepujacych wyrazow !!!
-
-def cluster(documents, terms):
+def cluster(documents, terms, mostfreq = 2000):
     logging.info("Performing clustering procedure")
 
-    order = sorted(terms.iteritems(), key = lambda x: x[1])[:2000]
+    order = [ x[0] for x in terms.items()[:mostfreq] ]
 
-    print order
-
-    """
     vectors = []
-    sortedterms = {}
+    docnames = []
 
     for key, doc in documents.iteritems():
-        vectors[len(vectors):] = [ numpy.array([ doc['tfidf'][o[0]] for o in order ]) ]  # posortowane alfabetycznie termy do numpy.array'a
+        logging.info("Creating documnet vector for " + key )
+        vectors[len(vectors):] = [ numpy.array([ doc['tfidf'][o] for o in order ]) ]  # posortowane alfabetycznie termy do numpy.array'a
+        docnames[len(docnames):] = [key]
 
-    clusterer = KMeansClusterer(4, euclidean_distance)
+    clusterer = KMeansClusterer(7, euclidean_distance)
     clusters  = clusterer.cluster(vectors, True, trace = False)
 
+    for i in range(len(clusters)) :
+        print "[" + docnames[i] + "] -> " + str(clusters[i])
+
     print clusters
-    """
