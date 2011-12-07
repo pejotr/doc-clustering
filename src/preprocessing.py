@@ -21,9 +21,6 @@ def compute_tfidf(document, documents):
 
     for term in document['terms']:
         occ = [ x for x, y in documents.iteritems() if y['tf'][term] > 0 ]
-
-        print term + " : " + str(len(occ)) 
-
         val = document['tf'].freq(term) * math.log10( d / len(occ) )
         tfidf[term] = val
 
@@ -61,8 +58,9 @@ def process_documents(path):
 
         fdist = FreqDist(word.lower() for word in stemmes)
         allfreq.update(word.lower() for word in stemmes)
-    
+
         documents[infile] = { 'docname': infile,  'terms': stemmes, 'tf': fdist, 'tfidf': None  }
+
 
     for key, doc in documents.iteritems():
         doctfidf = compute_tfidf(doc ,documents)
@@ -83,7 +81,7 @@ def cluster(documents, terms, mostfreq = 2000):
         vectors[len(vectors):] = [ numpy.array([ doc['tfidf'][o] for o in order ]) ]  # posortowane alfabetycznie termy do numpy.array'a
         docnames[len(docnames):] = [key]
 
-    clusterer = KMeansClusterer(7, euclidean_distance)
+    clusterer = KMeansClusterer(4, euclidean_distance)
     clusters  = clusterer.cluster(vectors, True, trace = False)
 
     for i in range(len(clusters)) :
