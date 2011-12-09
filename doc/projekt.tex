@@ -17,7 +17,15 @@ Dany jest zbiór dokumentów tekstowych (czysty tekst oraz HTML). Należy dokona
 
 
 \section{Algorytm}
-
+\begin{enumerate}
+\item Wczytanie dokumentu do analizy
+\item Utworzenie w pamięci 2 kopii dokumentu: bez i z znacznikami HTML
+\item Usunięcie wszystkich znaków specjalnych, interpunkcji z przetwarzanego dokumentu
+\item Usunięcie słów będących spójnikami i innych nie mających wpływu na treść dokumentu
+\item Stemming tekstu, zliczenie wystepujących wyrażeń ( terms )
+\item Wykorzystanie kopii zawiarającej znaczniki HTML do lepszej oceny treści
+\item Grupowanie dokumentów
+\end{enumerate}
 
 \section{Narzędzia}
 Projekt został zaimplementowany w języku Python. Wynika to z łatwości języka i ilością dostępnych bibliotek zapewniających stopień abstrakcji umożliwiający skupienie się na rozwiązaniu problemu, a nie implementacji algorytmów składowych.
