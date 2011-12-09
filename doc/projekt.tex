@@ -2,9 +2,10 @@
 \usepackage[polish]{babel}
 \usepackage[utf8]{inputenc}
 \usepackage[T1]{fontenc}
+\usepackage{amsmath}
 
 \begin{document}
-\title{WEDT - PROJEKT ROZWIĄZANIA}
+\title{WEDT - DOKUMENTACJA WSTĘPNA}
 \author{Piotr Doniec}
 \date {Grudzień 2011}
 \maketitle
@@ -12,26 +13,39 @@
 \section{Cel projektu, zadanie}
 Dany jest zbiór dokumentów tekstowych (czysty tekst oraz HTML). Należy dokonać podziału zbioru na grupy, tak aby dokumenty należące do pojedynczej grupy były jak najbardziej zbliżone tematycznie do siebie, a jednocześnie odmienne od dokumentów w pozostałych grupach. Grupy mogą (ale nie muszą) - tworzyć strukturę hierarchiczną. 
 
-\section{}
-
-
-
 \section{Algorytm}
 \begin{enumerate}
 \item Wczytanie dokumentu do analizy
-\item Utworzenie w pamięci 2 kopii dokumentu: bez i z znacznikami HTML
-\item Usunięcie wszystkich znaków specjalnych, interpunkcji z przetwarzanego dokumentu
-\item Usunięcie słów będących spójnikami i innych nie mających wpływu na treść dokumentu
-\item Stemming tekstu, zliczenie wystepujących wyrażeń ( terms )
-\item Wykorzystanie kopii zawiarającej znaczniki HTML do lepszej oceny treści
-\item Grupowanie dokumentów
+\item Utworzenie w pamięci 2 kopii dokumentu: bez i z znacznikami HTML. Funkcja usuwająca HTML jest zaimplementowana w NLTK.
+\item Usunięcie wszystkich znaków specjalnych, interpunkcji z przetwarzanego dokumentu przy pomocy prostego wyrażenia regularnego. 
+\item Usunięcie spójników i innych słów nie mających wpływu na treść dokumentu (ang. stopwords). Biblioteka NLTK zawiera listę takich wyrazów dla kilku języków. Dla języka angielskiego twórcy biblioteki przewidzieli 127 wyrazów. 
+\item Stemming tekstu, zliczenie wystepujących wyrażeń (terms). Wykorzystany jest stemmer Portera. Do prowadzenia statystyk wyrazów wykorzystany jest typ FreqDist umożliwiający łatwe uaktualnianie statystyki a także dostęp do liczby i częstotliwości wystąpienia wyrażenia bez konieczności przeprowadzania dodatkowych obliczeń. 
+\item Wykorzystanie kopii zawiarającej znaczniki HTML do lepszej oceny treści. Z treści zadania wynika, że dokumenty mogą zawierać znaczniki HTML. Można wykorzystać tę własność w celu poznanania potencjalnie istotnych słów dla dokumentu. Znaczniki HTML można w łatwy sposób poszeregować względem ważności. Im ważniejszy znacznik, tym istotniejsze są słowa które zawiera. W chwili obecnej program uwzględnia tylko znacznik <TITLE></TITLE> i <H1></H1>. Wartościowanie znaczników odbywa się poprzez zwiększenie liczby wystąpień słowa o pewną stałą zadaną jako parametr.
+\item Obliczenie dla każdego dokumentu współczynnika tf-idf zgodnie ze wzorem: 
+
+\begin{math} (tf-idf)_{i,j} = tf_{i,j} * \log( \frac{|D|}{|{d: t_i \in d}|}) \end{math}
+
+gdzie, \\*
+\( tf_{i,j} \) - częstotliwość występowania wyrażenia 'i' w dokumencie 'j' \\*
+\( |D| \) - liczba przetwarzanych dokumentów \\*
+\( |d:t_i \in d| \) - liczba dokumentów w których występuje wyrażenie 'i'
+\item Grupowanie dokumentów na podstawie współczynnika tf-idf. Aktualnie wykorzystywany jest algorytm KMeans oraz odległość Euklidesowa. Próby wykorzystania podobieństwa cosinusowego zakończyły się błędami - wysoce prawdopodobne, że to błąd w bibliotece. 
 \end{enumerate}
 
 \section{Narzędzia}
-Projekt został zaimplementowany w języku Python. Wynika to z łatwości języka i ilością dostępnych bibliotek zapewniających stopień abstrakcji umożliwiający skupienie się na rozwiązaniu problemu, a nie implementacji algorytmów składowych.
+Projekt został zaimplementowany w języku Python. Wynika to z łatwości języka i ilością dostępnych bibliotek zapewniających stopień abstrakcji umożliwiający skupienie się na rozwiązaniu problemu bez koniczności implementacji algorytmów składowych.
 
-Głównym ogniwem jest przedstawiona na wykładzie biblioteka nltk zapewniająca większość wymaganej funkcjonalności wykorzystanej w projeckie. Z poziomu nltk możliwa jest tokenizacja tekstu, dostęp do korpusów, stemming wyrazów. Zaimplementowane są także najpopularniejsze funkcje obliczające podobieństwo między dokumentami oraz algorytmy grupowania. Oprócz tego wykoszystano również bibliotekę lxml która umożliwia w łatwe i szybkie parsowanie dokumentów HTML.
+Głównym ogniwem jest przedstawiona na wykładzie biblioteka nltk zapewniająca większość wymaganej funkcjonalności wykorzystanej w projeckie. Z poziomu nltk możliwa jest między innymi tokenizacja tekstu, dostęp do korpusów oraz stemming wyrazów. Zaimplementowane są także najpopularniejsze funkcje obliczające podobieństwo między dokumentami oraz algorytmy grupowania. Dodatkowo wykoszystano bibliotekę lxml która umożliwia w łatwe i szybkie parsowanie dokumentów HTML.
 
 Kod projekt jest objęty systemem kontroli wersji i dostępny pod adresem: http://github.com/pejotr/doc-clustering
+
+\begin{thebibliography}{9}
+\bibitem{SimMes}
+A. Huang, \emph{Similarity Measures for Text Document Clustering}, Department of Computer Science, The University of Waikato, Hamilton, New Zealand
+\bibitem{CompClust}
+M. Steinbach, G. Karypis, V. Kumar, \emph{A Comparison of Document Clustering Techniques}, Department of Computer Science and Egineering, University of Minnesota
+\bibitem{Mann}
+C. Manning, H. Schütze, \emph{Foundations of Statistical Natural Language Processing},MIT Press, 1999
+\end{thebibliography}
 
 \end{document}

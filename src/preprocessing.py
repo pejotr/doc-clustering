@@ -15,6 +15,9 @@ from nltk.stem import PorterStemmer
 from nltk.corpus import stopwords
 from nltk.probability import FreqDist
 
+TITLE_WEIGHT  = 5 
+HEADER_WEIGHT = 2 
+
 def compute_tfidf(document, documents):
     logging.info("Computing tfidf values for document: " + document['docname'])
 
@@ -27,9 +30,6 @@ def compute_tfidf(document, documents):
         tfidf[term] = val
 
     return tfidf
-
-TITLE_WEIGHT = 5 
-HEADER_WEIGHT =2 
 
 def evaluate_html(content):
     logging.info("\tEvaluating HTML")
