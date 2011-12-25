@@ -28,13 +28,14 @@ def compute_tfidf(document, documents):
 
     return tfidf
 
-TITLE_WEIGHT = 5 
-HEADER_WEIGHT =2 
 
-def evaluate_html(content):
-    logging.info("\tEvaluating HTML")
-   
+def evaluate_html(content, html_conf):
+    
     fdist = FreqDist()
+    if html_conf['usehtml'] == False:
+        return fdist
+ 
+    logging.info("\tEvaluating HTML")
      
     # try with TITLE tag
     titles = re.findall("<title>[A-Za-z0-9 ]+</title>", content)
@@ -44,7 +45,7 @@ def evaluate_html(content):
         terms_list = [ x for x in words_list if x.lower() not in stopwords.words('english')]
         stems = steming(terms_list)
 
-        for i in range(TITLE_WEIGHT):
+        for i in range(html_conf['title']):
             fdist.update(stems)
 
     # try with H1 tag
@@ -55,7 +56,7 @@ def evaluate_html(content):
         terms_list = [ x for x in words_list if x.lower() not in stopwords.words('english')]
         stems = steming(terms_list)
 
-        for i in range(HEADER_WEIGHT):
+        for i in range(html_conf['h1']):
             fdist.update(stems)
 
     return fdist
@@ -70,7 +71,7 @@ def steming(terms) :
 
     return stemmes
 
-def process_documents(path):
+def process_documents(path, html_conf):
     logging.info("Using documents from \"" + path + "\" directory ")
     
     if path[-1] != "/" :
@@ -98,7 +99,7 @@ def process_documents(path):
         fdist = FreqDist(word.lower() for word in stemmes)
         allfreq.update(word.lower() for word in stemmes)
 
-        htmldist = evaluate_html(raw_doc.lower())
+        htmldist = evaluate_html(raw_doc.lower(), html_weight_config)
         fdist.update(htmldist)
         allfreq.update(htmldist)
     
