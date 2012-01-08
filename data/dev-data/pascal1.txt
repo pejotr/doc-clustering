@@ -1,0 +1,88 @@
+unit ConProc;
+
+interface
+
+uses
+
+  DOS,          Crt,
+  Objects,  Drivers,    Views,    Menus,      App,
+  Memory,   Dialogs,    SADDlg,   SADMouse,
+  MASInit,  SADMsg, Printer, MASAsort, MASFirm, MASKontr;
+
+  procedure StrDec(var S : String );
+  procedure StrInc(var S : String );
+  function  QueryBox(var S : String; Title : String) : Word;
+
+implementation
+
+   procedure StrDec(var S : String );
+     var
+       SampleValue : LongInt;
+       ValueControl : Integer;
+
+     begin
+
+       Val(S, SampleValue, ValueControl );
+       Dec( SampleValue );
+       Str( SampleValue, S );
+     end;
+
+   procedure StrInc(var S : String );
+      var
+       SampleValue : LongInt;
+       ValueControl : Integer;
+
+     begin
+
+       Val(S, SampleValue, ValueControl );
+       Inc( SampleValue );
+       Str( SampleValue, S );
+     end;
+
+   function QueryBox(var S : String; Title : String) : Word;
+    var
+     DialogData : record
+        InputLineData : String;
+     end;
+     Dialog : PDialog;
+     R : TRect;
+     C : PInputLine;
+     Control : Integer;
+
+     begin
+
+      R.Assign(0, 0, 23, 9);
+
+      Dialog := New( PDialog, Init( R, Title));
+      with Dialog^ do
+      begin
+
+        R.Assign( 2, 6, 12, 8);
+        Insert( New( PButton, Init( R, 'O~K~', cmOK, bfDefault)));
+        R.Move( 10, 0);
+        Insert( New( PButton, Init( R, '~P~orzuç', cmCancel, bfNormal)));
+
+        R.Assign( 2, 2, 20, 3);
+        C :=  New( PInputLine, Init( R, 40 ));
+        Insert( C );
+
+        Options := Options or ofCentered;
+
+      end;
+
+      DialogData.InputLineData := S;
+      Dialog^.SetData(DialogData);
+      Control := DeskTop^.ExecView( Dialog );
+      if Control <> cmCancel then
+      begin
+
+         Dialog^.GetData(DialogData);
+         S := DialogData.InputLineData;
+         QueryBox := cmOK;
+
+      end
+      else QueryBox := cmCancel;
+      Dispose(Dialog, Done);
+
+    end;
+end.

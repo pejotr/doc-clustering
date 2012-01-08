@@ -28,11 +28,12 @@ def compute_tfidf(document, documents):
 
     return tfidf
 
-
+# dodatkowy znacznik HAS_HMTL ???
 def evaluate_html(content, html_conf):
     
     fdist = FreqDist()
     if html_conf['usehtml'] == False:
+        logging.info('Discarding HTML tags')
         return fdist
  
     logging.info("\tEvaluating HTML")
@@ -99,7 +100,7 @@ def process_documents(path, html_conf):
         fdist = FreqDist(word.lower() for word in stemmes)
         allfreq.update(word.lower() for word in stemmes)
 
-        htmldist = evaluate_html(raw_doc.lower(), html_weight_config)
+        htmldist = evaluate_html(raw_doc.lower(), html_conf)
         fdist.update(htmldist)
         allfreq.update(htmldist)
     
@@ -111,7 +112,7 @@ def process_documents(path, html_conf):
 
     return documents, allfreq
 
-def cluster(documents, terms, mostfreq = 2000):
+def cluster(documents, terms, mostfreq, groups, use_cosine, repeats):
     logging.info("Performing clustering procedure")
 
     order = [ x[0] for x in terms.items()[:mostfreq] ]
@@ -124,10 +125,18 @@ def cluster(documents, terms, mostfreq = 2000):
         vectors[len(vectors):] = [ numpy.array([ doc['tfidf'][o] for o in order ]) ]  # posortowane alfabetycznie termy do numpy.array'a
         docnames[len(docnames):] = [key]
 
-    clusterer = KMeansClusterer(3, euclidean_distance, repeats = 20)
+    if use_cosine :
+        logging.info("Using cosine similarity function")
+        clusterer = KMeansClusterer(groups, cosine_distance, repeats)
+    else :
+        logging.info("Using euclidean similarity function")
+        clusterer = KMeansClusterer(groups, euclidean_distance, repeats)
+
     clusters  = clusterer.cluster(vectors, True, trace = False)
 
-    for i in range(len(clusters)) :
-        print "[" + docnames[i] + "] -> " + str(clusters[i])
+    clustering_result = zip(docnames, clusters)
+    return clustering_result
 
-    print clusters
+#    for i in range(len(clusters)) :
+#        print "[" + docnames[i] + "] -> " + str(clusters[i])
+
