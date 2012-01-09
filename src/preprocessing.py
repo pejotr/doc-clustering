@@ -137,6 +137,4 @@ def cluster(documents, terms, mostfreq, groups, use_cosine, repeats):
     clustering_result = zip(docnames, clusters)
     return clustering_result
 
-#    for i in range(len(clusters)) :
-#        print "[" + docnames[i] + "] -> " + str(clusters[i])
 

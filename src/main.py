@@ -3,16 +3,25 @@ import logging
 import getopt
 import preprocessing
 
-DEF_HTML_USE_TAGS      = True
-DEF_HTML_TITLE_WEIGHT  = 5 
-DEF_HTML_H1_WEIGHT     = 2 
+DEF_HTML_USE_TAGS      = False
+DEF_HTML_TITLE_WEIGHT  = 1 
+DEF_HTML_H1_WEIGHT     = 1 
 DEF_TOP_FREQ_TERMS     = 2000
 DEF_GROUP_CNT          = 3
 DEF_USE_COSINE         = False
 DEF_REPEATS            = 20
 
 def usage():
-    pass
+    print "python main.py path_to_documents"
+    print "Opcje: "
+    print "\t--usehtml  - wykorzystanie tagow HTML do analizy dokumentow"
+    print "\t--cosine   - wykorzystanie podobienstwa cosinusowego zamiast euklidesowego"
+    print "\t--title=n  - wartosc slow zawartych pomiedzy tagami <title></title>"
+    print "\t--h1=n     - wartosc slow zawartych pomiedzy tagami <h1></h1>"
+    print "\t--freq=n   - liczba najczesciej wystepujacych slow wykorzystana do grupowania"
+    print "\t--groups=n - maksymalna liczba grup"
+    print "\t--repeats  - liczba prob grupowania"
+    
 
 def main(argv):
     logging.basicConfig(format='%(levelname)s:%(message)s', level=logging.DEBUG)
@@ -56,4 +65,6 @@ def main(argv):
 
 
 if __name__ == "__main__" :
-    main(sys.argv[1:])
+
+    usage()
+    #main(sys.argv[1:])

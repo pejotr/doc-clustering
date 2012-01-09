@@ -12,11 +12,7 @@
 \section{Cel projektu, zadanie}
 Dany jest zbiór dokumentów tekstowych (czysty tekst oraz HTML). Należy dokonać podziału zbioru na grupy, tak aby dokumenty należące do pojedynczej grupy były jak najbardziej zbliżone tematycznie do siebie, a jednocześnie odmienne od dokumentów w pozostałych grupach. Grupy mogą (ale nie muszą) - tworzyć strukturę hierarchiczną. 
 
-\section{}
-
-
-
-\section{Algorytm}
+\section{Metoda rozwiazania}
 \begin{enumerate}
 \item Wczytanie dokumentu do analizy
 \item Utworzenie w pamięci 2 kopii dokumentu: bez i z znacznikami HTML
@@ -27,11 +23,17 @@ Dany jest zbiór dokumentów tekstowych (czysty tekst oraz HTML). Należy dokona
 \item Grupowanie dokumentów
 \end{enumerate}
 
+
+
 \section{Narzędzia}
 Projekt został zaimplementowany w języku Python. Wynika to z łatwości języka i ilością dostępnych bibliotek zapewniających stopień abstrakcji umożliwiający skupienie się na rozwiązaniu problemu, a nie implementacji algorytmów składowych.
 
 Głównym ogniwem jest przedstawiona na wykładzie biblioteka nltk zapewniająca większość wymaganej funkcjonalności wykorzystanej w projeckie. Z poziomu nltk możliwa jest tokenizacja tekstu, dostęp do korpusów, stemming wyrazów. Zaimplementowane są także najpopularniejsze funkcje obliczające podobieństwo między dokumentami oraz algorytmy grupowania. Oprócz tego wykoszystano również bibliotekę lxml która umożliwia w łatwe i szybkie parsowanie dokumentów HTML.
 
 Kod projekt jest objęty systemem kontroli wersji i dostępny pod adresem: http://github.com/pejotr/doc-clustering
+
+\section{Uruchomienie}
+W celu przetestowania 
+
 
 \end{document}
