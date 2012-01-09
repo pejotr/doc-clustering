@@ -31,10 +31,14 @@ def compute_tfidf(document, documents):
 
     return tfidf
 
-def evaluate_html(content):
-    logging.info("\tEvaluating HTML")
-   
+# dodatkowy znacznik HAS_HMTL ???
+def evaluate_html(content, html_conf):
     fdist = FreqDist()
+    if html_conf['usehtml'] == False:
+        logging.info('Discarding HTML tags')
+        return fdist
+ 
+    logging.info("\tEvaluating HTML")
      
     # try with TITLE tag
     titles = re.findall("<title>[A-Za-z0-9 ]+</title>", content)
@@ -44,7 +48,7 @@ def evaluate_html(content):
         terms_list = [ x for x in words_list if x.lower() not in stopwords.words('english')]
         stems = steming(terms_list)
 
-        for i in range(TITLE_WEIGHT):
+        for i in range(html_conf['title']):
             fdist.update(stems)
 
     # try with H1 tag
@@ -55,7 +59,7 @@ def evaluate_html(content):
         terms_list = [ x for x in words_list if x.lower() not in stopwords.words('english')]
         stems = steming(terms_list)
 
-        for i in range(HEADER_WEIGHT):
+        for i in range(html_conf['h1']):
             fdist.update(stems)
 
     return fdist
@@ -70,7 +74,7 @@ def steming(terms) :
 
     return stemmes
 
-def process_documents(path):
+def process_documents(path, html_conf):
     logging.info("Using documents from \"" + path + "\" directory ")
     
     if path[-1] != "/" :
@@ -98,7 +102,7 @@ def process_documents(path):
         fdist = FreqDist(word.lower() for word in stemmes)
         allfreq.update(word.lower() for word in stemmes)
 
-        htmldist = evaluate_html(raw_doc.lower())
+        htmldist = evaluate_html(raw_doc.lower(), html_conf)
         fdist.update(htmldist)
         allfreq.update(htmldist)
     
@@ -110,7 +114,7 @@ def process_documents(path):
 
     return documents, allfreq
 
-def cluster(documents, terms, mostfreq = 2000):
+def cluster(documents, terms, mostfreq, groups, use_cosine, repeats):
     logging.info("Performing clustering procedure")
 
     order = [ x[0] for x in terms.items()[:mostfreq] ]
@@ -123,10 +127,18 @@ def cluster(documents, terms, mostfreq = 2000):
         vectors[len(vectors):] = [ numpy.array([ doc['tfidf'][o] for o in order ]) ]  # posortowane alfabetycznie termy do numpy.array'a
         docnames[len(docnames):] = [key]
 
-    clusterer = KMeansClusterer(3, euclidean_distance, repeats = 20)
+    if use_cosine :
+        logging.info("Using cosine similarity function")
+        clusterer = KMeansClusterer(groups, cosine_distance, repeats)
+    else :
+        logging.info("Using euclidean similarity function")
+        clusterer = KMeansClusterer(groups, euclidean_distance, repeats)
+
     clusters  = clusterer.cluster(vectors, True, trace = False)
 
-    for i in range(len(clusters)) :
-        print "[" + docnames[i] + "] -> " + str(clusters[i])
+    clustering_result = zip(docnames, clusters)
+    return clustering_result
 
-    print clusters
+#    for i in range(len(clusters)) :
+#        print "[" + docnames[i] + "] -> " + str(clusters[i])
+

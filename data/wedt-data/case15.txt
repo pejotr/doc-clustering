@@ -1,0 +1,967 @@
+{$A+,B-,D+,E+,F-,G-,I-,L-,N-,O-,R+,S+,V-,X+}
+{$M 65000,0,655360}
+
+unit MASAsort;
+
+interface
+
+uses
+
+  DOS,          Crt,
+  Objects,  Drivers,    Views,    Menus,      App,
+  Memory,   Dialogs,    SADDlg,   SADMouse,
+  MASInit,  SADMsg, Printer, MASFirm, MASKontr;
+
+type
+
+  PAsortCollection = ^TAsortCollection;
+  TAsortCollection = object ( TSortedCollection )
+      function Compare( Key1, Key2 : Pointer) : Integer; virtual;
+  end;
+
+  PAsortItem = ^TAsortItem;
+  TAsortItem = object( TObject )
+     Name, JDM, Value, SWW, VAT : PString;
+
+    constructor Init(NewName, NewValue, NewJDM, NewSWW, NewVAT : String);
+    procedure Change(NewName, NewValue, NewJDM,NEWSWW, NewVAT : String);
+    procedure Store( var S : TStream); virtual;
+    constructor Load( var S : TStream);
+    destructor Done; virtual;
+
+  end;
+
+  { List Box for Asort Window }
+
+   PAsortListBox = ^TAsortListBox;
+   TAsortListBox = object ( TListBox )
+    function GetText( Item : Integer; MaxLen : Integer ): String; virtual;
+ end;
+
+ PSecondDialog = ^TSecondDialog;
+ TSecondDialog = object (TDialog )
+    FirstItemPointer : PInputLine;
+ end;
+
+
+
+ { Asort Window }
+
+   PAsortWindow = ^TAsortWindow;
+   TAsortWindow = object ( TDialog )
+    ListBoxPointer : PListBox;
+    SecondDialog   : PSecondDialog;
+    SecondDialogData : record
+      FirstInputLine : String[30];
+      SecondInputLine: String[7];
+      ThirdInputLine : String[4];
+      FourthInputLine : String[10];
+      FifthInputLine : String[4];
+    end;
+    procedure HandleEvent( var Event : TEvent ); virtual;
+    procedure Close; virtual;
+ end;
+
+   PrinterLine = array [1..132] of char;
+
+const
+
+ { Field lengths in list box }
+
+  NameLength = 30;
+  ValueLength = 7;
+  JDMLength = 4;
+  SWWLength = 10;
+  VATLength = 4;
+
+ { Maximum printer line length }
+
+   MaxLenPRN = 130;
+
+ { Stream registration records }
+
+  RAsortCollection : TStreamRec = (
+   ObjType : 1000;
+   VmtLink : Ofs(TypeOf(TAsortCollection)^);
+   Load: @TAsortCollection.Load;
+   Store: @TAsortCollection.Store);
+
+  RAsortItem : TStreamRec = (
+   ObjType: 1001;
+   VmtLink: Ofs(TypeOf(TAsortItem)^);
+   Load: @TAsortItem.Load;
+   Store: @TAsortItem.Store);
+
+
+   Days : array [0..6] of String[20] =
+    ('Niedziela','Poniedziaíek','Wtorek',
+     'òroda','Czwartek','PiÜtek',
+     'Sobota');
+
+
+
+var
+
+  AsortLib : array[1..5] of PAsortCollection;
+  AsortType : Integer;
+
+  LibraryStream : TDosStream;
+
+  IsAsort : Boolean;
+
+
+    function CreateAsortWindow(TitleString : String) : PAsortWindow;
+    procedure SpozAsort;
+    procedure LoadAsortLib;
+    procedure SaveAsortLib;
+    procedure PrintAsortLib(Header : String);
+
+    function CalcCurrentDate : String;
+
+
+implementation
+
+
+function TAsortCollection.Compare(Key1, Key2 : Pointer) : Integer;
+var
+
+ Point1, Point2 : PAsortItem;
+ Check : Integer;
+begin
+ Point1 := Key1;
+ Point2 := Key2;
+ if Point1^.Name^ < Point2^.Name^ then Check := -1;
+ if Point1^.Name^ = Point2^.Name^ then Check := 0;
+ if Point1^.Name^ > Point2^.Name^ then Check := 1;
+
+ Compare := Check;
+end;
+
+constructor TAsortItem.Init( NewName, NewValue, NewJDM, NewSWW, NewVAT : String );
+  begin
+
+   Name := NewStr( String40 );
+   Name^ := NewName;
+   Value := NewStr( String10 );
+   Value^ := NewValue;
+   JDM := NewStr( String10 );
+   JDM^ := NewJDM;
+   SWW := NewStr( String40 );
+   SWW^ := NewSWW;
+   VAT := NewStr( String10 );
+   VAT^ := NewVAT;
+
+  end;
+
+  procedure TAsortItem.Change( NewName, NewValue, NewJDM, NewSWW, NewVAT : String );
+  begin
+    DisposeStr( Name );
+    DisposeStr( Value );
+    DisposeStr( JDM );
+    DisposeStr( SWW );
+    DisposeStr( VAT );
+
+   Name := NewStr( String40 );
+   Name^ := NewName;
+   Value := NewStr( String10 );
+   Value^ := NewValue;
+   JDM := NewStr( String10 );
+   JDM^ := NewJDM;
+   SWW := NewStr( String40 );
+   SWW^ := NewSWW;
+   VAT := NewStr( String10 );
+   VAT^ := NewVAT;
+
+
+  end;
+
+  destructor TAsortItem.Done;
+  begin
+    DisposeStr( Name );
+    DisposeStr( Value );
+    DisposeStr( JDM );
+    DisposeStr( SWW );
+    DisposeStr( VAT );
+  end;
+
+  procedure TAsortItem.Store( var S : TStream );
+  begin
+    if Name = nil then Name := NewStr( String40 );
+    if Value = nil then Value := NewStr( String10 );
+    if JDM = nil then JDM := NewStr( String10 );
+    if SWW = nil then SWW := NewStr( String40 );
+    if VAT = nil then VAT := NewStr( String10 );
+
+    S.Write( Name^, 31 {SizeOf(String)} );
+    S.Write( Value^, 8 {SizeOf(String)} );
+    S.Write( JDM^, 5 {SizeOf(String)} );
+    S.Write( SWW^, 11 );
+    S.Write( VAT^, 5 );
+  end;
+
+  constructor TAsortItem.Load( var S : TStream );
+  var
+  NewName, NewValue, NewJDM, NewSWW, NewVAT : String;
+
+  begin
+
+    S.Read( NewName, 31 { SizeOf(String)} );
+    S.Read( NewValue, 8 { SizeOf(String)} );
+    S.Read( NewJDM, 5 { SizeOf(String)}  );
+    S.Read( NewSWW, 11 );
+    S.Read( NewVAT, 5 );
+
+   Name := NewStr( String40 );
+   Name^ := NewName;
+   Value := NewStr( String10 );
+   Value^ := NewValue;
+   JDM := NewStr( String10 );
+   JDM^ := NewJDM;
+   SWW := NewStr( String40 );
+   SWW^ := NewSWW;
+   VAT := NewStr( String10 );
+   VAT^ := NewVAT;
+
+
+
+  end;
+
+  { Asort List Box }
+
+  function TAsortListBox.GetText( Item : Integer; MaxLen : Integer ) : String;
+  var
+   AuxPointer : PAsortItem;
+   AuxValue : LongInt;
+   Control : Integer;
+   ZlotysStr, GrStr : String;
+
+  begin
+
+   AuxPointer := List^.At(Item);
+
+   Val( AuxPointer^.Value^, AuxValue, Control );
+   Str(round (AuxValue / 100) div 100, ZlotysStr );
+   Str((round( AuxValue / 100 ) - (round (AuxValue / 100) div 100)*100), GrStr );
+   if Length(GrStr) = 1 then GrStr := '0' + GrStr;
+
+   GetText := AuxPointer^.Name^+Copy(Spaces80, 1, NameLength-Length(AuxPointer^.Name^)) + ' '+
+              ZlotysStr+'.'+GrStr+Copy(Spaces80, 1, ValueLength-Length(ZlotysStr)-3) + '  '+
+              Copy(Spaces80, 1, JDMLength-Length(AuxPointer^.JDM^)) + AuxPointer^.JDM^ + ' ' + AuxPointer^.VAT^;
+
+
+  end;
+
+
+  { Asort Window }
+
+  procedure TAsortWindow.HandleEvent ( var Event : TEvent );
+
+  var
+   SecondControl : Word;
+   FirstPointer, SecondPointer  : PAsortItem;
+   SampleValue : LongInt;
+   ValueControl : Integer;
+   AuxValue : LongInt;
+   Control : Integer;
+   ZlotysStr, GrStr : String;
+   RealValue : Real;
+   I : Integer;
+
+
+  begin
+    TDialog.HandleEvent ( Event );
+
+     if Event.What = evCommand then
+       case Event.Command of
+
+         cmAsortDelete : begin
+
+                         if MessageBox(^C+'Na pewno chcesz skasowaç pozycjë ?', nil,
+                         mfInformation+mfYesButton+mfNoButton) = cmYes then
+                         begin
+
+                         if ListBoxPointer^.Range = 0 then
+                         begin
+                           MessageBox(^C+'Brak jakiegokolwiek wpisu',
+                                       nil, mfInformation + mfOkButton);
+                           ClearEvent( Event );
+                           Exit;
+                         end;
+
+                         ListBoxPointer^.List^.AtFree( ListBoxPointer^.Focused );
+                         ListBoxPointer^.SetRange( ListBoxPointer^.List^.Count );
+                         ListBoxPointer^.DrawView;
+
+                         end;
+
+                       end;
+
+         cmAsortModify : begin
+
+                        if ListBoxPointer^.Range = 0 then
+                         begin
+                           MessageBox(^C+'Brak jakiegokolwiek wpisu',
+                                       nil, mfInformation + mfOkButton);
+                           ClearEvent( Event );
+                           Exit;
+                         end;
+
+                        with SecondDialogData do
+                        begin
+                         FirstPointer := ListBoxPointer^.List^.At( ListBoxPointer^.Focused ) ;
+                         FirstInputLine := FirstPointer^.Name^;
+
+                         Val( FirstPointer^.Value^, AuxValue, Control );
+                         Str(round (AuxValue / 100) div 100, ZlotysStr );
+                         Str((round( AuxValue / 100 ) - (round (AuxValue / 100) div 100)*100), GrStr );
+                         if Length(GrStr) = 1 then GrStr := '0' + GrStr;
+
+                         SecondInputLine := ZlotysStr+'.'+GrStr+Copy(Spaces80, 1, ValueLength-Length(ZlotysStr)-3);
+
+
+                         ThirdInputLine := FirstPointer^.JDM^;
+                         FourthInputLine := FirstPointer^.SWW^;
+                         FifthInputLine := FirstPointer^.VAT^;
+
+                        end;
+
+                        SecondDialog^.SetData(SecondDialogData);
+                        SecondDialog^.FirstItemPointer^.Select;
+
+                        SecondControl := Desktop^.ExecView( SecondDialog );
+                        if SecondControl <> cmCancel then
+                          SecondDialog^.GetData(SecondDialogData);
+
+                        { Here the data control }
+
+                        with SecondDialogData do
+                        begin
+                          System.Delete ( FirstInputLine , 31 , 255 );
+                          System.Delete ( SecondInputLine , 8 , 255 );
+                          System.Delete ( ThirdInputLine, 5, 255 );
+                          System.Delete ( FourthInputLine, 11, 255 );
+                          System.Delete ( FifthInputLine, 5, 255 );
+
+                          if ( FirstInputLine <> '') and ( SecondInputLine <> '') and ( ThirdInputLine <> '' ) then
+                          begin
+
+                            { cut spaces }
+                            I := Length( SecondInputLine );
+                            while (SecondInputLine[I] = ' ') and (I > 1) do Dec(I);
+                            SecondInputLine := Copy(SecondInputLine,1, I);
+
+                            Val( SecondInputLine, RealValue, ValueControl );
+
+                            if (ValueControl = 0) and (RealValue < 200000) and (RealValue >=0) then
+                            begin
+
+                              if FirstInputLine[1] = 'ß' then FirstInputLine[1] := '°' else
+                              if FirstInputLine[1] = '¶' then FirstInputLine[1] := '†' else
+                              if FirstInputLine[1] = 'Ü' then FirstInputLine[1] := 'è' else
+                              if FirstInputLine[1] = 'ç' then FirstInputLine[1] := 'ï' else
+                              if FirstInputLine[1] = 'ë' then FirstInputLine[1] := 'ê' else
+                              if FirstInputLine[1] = 'û' then FirstInputLine[1] := 'ò' else
+                              if FirstInputLine[1] = 'í' then FirstInputLine[1] := 'ú' else
+                              if FirstInputLine[1] = '¢' then FirstInputLine[1] := '£' else
+                              if FirstInputLine[1] = '°' then FirstInputLine[1] := '°' else
+                              if FirstInputLine[1] = '†' then FirstInputLine[1] := '†' else
+                              if FirstInputLine[1] = 'è' then FirstInputLine[1] := 'è' else
+                              if FirstInputLine[1] = 'ï' then FirstInputLine[1] := 'ï' else
+                              if FirstInputLine[1] = 'ê' then FirstInputLine[1] := 'ê' else
+                              if FirstInputLine[1] = 'ò' then FirstInputLine[1] := 'ò' else
+                              if FirstInputLine[1] = 'ú' then FirstInputLine[1] := 'ú' else
+                              if FirstInputLine[1] = '£' then FirstInputLine[1] := '£' else
+                              FirstInputLine[1] := UpCase(FirstInputLine[1]);
+
+                              ListBoxPointer^.List^.AtFree( ListBoxPointer^.Focused );
+                              Str(round(RealValue * 10000), SecondInputLine );
+                              ListBoxPointer^.List^.Insert(New( PAsortItem, Init(FirstInputLine, SecondInputLine,
+                              ThirdInputLine, FourthInputLine, FifthInputLine)));
+                            end
+                            else
+                              MessageBox(^C+'Bledna wartosc towaru',
+                                       nil, mfError + mfOkButton);
+
+                          end;
+                        end;
+
+                        ListBoxPointer^.DrawView;
+
+                       end;
+
+         cmAsortAdd : begin
+
+                        with SecondDialogData do
+                        begin
+                         FirstInputLine := '';
+                         SecondInputLine:= '';
+                         ThirdInputLIne := '';
+                         FourthInputLine := '';
+                         FifthInputLine := '';
+                        end;
+
+                        SecondDialog^.SetData(SecondDialogData);
+                        SecondDialog^.FirstItemPointer^.Select;
+
+                        SecondControl := DeskTop^.ExecView( SecondDialog );
+                        if SecondControl <> cmCancel then
+
+                          SecondDialog^.GetData(SecondDialogData);
+
+                        { Here the data control }
+
+                        with SecondDialogData do
+                        begin
+                          System.Delete ( FirstInputLine , 31 , 255 );
+                          System.Delete ( SecondInputLine , 8 , 255 );
+                          System.Delete ( ThirdInputLine,    5, 255 );
+                          System.Delete ( FourthInputLine,    11, 255 );
+                          System.Delete ( FifthInputLine,    5, 255 );
+
+                          if (FirstInputLine <> '') and (SecondInputLine <> '') and ( ThirdInputLine <> '' )then
+                          begin
+                            { cut spaces }
+                            I := Length( SecondInputLine );
+                            while (SecondInputLine[I] = ' ') and (I > 1) do Dec(I);
+                            SecondInputLine := Copy(SecondInputLine,1, I);
+
+                            Val( SecondInputLine, RealValue, ValueControl );
+
+                            if (ValueControl = 0) and (RealValue < 200000) and (RealValue >=0) then
+                            begin
+
+                              if FirstInputLine[1] = 'ß' then FirstInputLine[1] := '°' else
+                              if FirstInputLine[1] = '¶' then FirstInputLine[1] := '†' else
+                              if FirstInputLine[1] = 'Ü' then FirstInputLine[1] := 'è' else
+                              if FirstInputLine[1] = 'ç' then FirstInputLine[1] := 'ï' else
+                              if FirstInputLine[1] = 'ë' then FirstInputLine[1] := 'ê' else
+                              if FirstInputLine[1] = 'û' then FirstInputLine[1] := 'ò' else
+                              if FirstInputLine[1] = 'í' then FirstInputLine[1] := 'ú' else
+                              if FirstInputLine[1] = '¢' then FirstInputLine[1] := '£' else
+                              if FirstInputLine[1] = '°' then FirstInputLine[1] := '°' else
+                              if FirstInputLine[1] = '†' then FirstInputLine[1] := '†' else
+                              if FirstInputLine[1] = 'è' then FirstInputLine[1] := 'è' else
+                              if FirstInputLine[1] = 'ï' then FirstInputLine[1] := 'ï' else
+                              if FirstInputLine[1] = 'ê' then FirstInputLine[1] := 'ê' else
+                              if FirstInputLine[1] = 'ò' then FirstInputLine[1] := 'ò' else
+                              if FirstInputLine[1] = 'ú' then FirstInputLine[1] := 'ú' else
+                              if FirstInputLine[1] = '£' then FirstInputLine[1] := '£' else
+                              FirstInputLine[1] := UpCase(FirstInputLine[1]);
+
+                              Str(round(RealValue * 10000), SecondInputLine );
+                              ListBoxPointer^.List^.Insert(New( PAsortItem, Init(FirstInputLine, SecondInputLine,
+                              ThirdInputLine, FourthInputLine, FifthInputLine)));
+                              ListBoxPointer^.SetRange(ListBoxPointer^.List^.Count);
+                            end
+                            else
+                              MessageBox(^C+'Bledna wartosc towaru',
+                                       nil, mfError + mfOkButton);
+
+                          end;
+                        end;
+
+                        ListBoxPointer^.DrawView;
+
+                       end;
+       end;
+
+   end;
+
+   procedure TAsortWindow.Close;
+    begin
+     Dispose( SecondDialog, Done);
+     TDialog.Close;
+     IsAsort := false;
+    end;
+
+  procedure LoadAsortLib;
+  var I : LongInt;
+  begin
+
+    LibraryStream.Init('ASORT.LIB', stOpenRead);
+
+    AsortType := 1;
+
+    AsortLib[1]   := PAsortCollection(LibraryStream.Get);
+    AsortLib[2]   := PAsortCollection(LibraryStream.Get);
+    AsortLib[3]   := PAsortCollection(LibraryStream.Get);
+    AsortLib[4]   := PAsortCollection(LibraryStream.Get);
+
+    LibraryStream.Done;
+    if LibraryStream.Status <> 0 then
+    begin
+
+      AsortLib[1]   := New(PAsortCollection, Init(1, 1));
+      AsortLib[2]   := New(PAsortCollection, Init(1, 1));
+      AsortLib[3]   := New(PAsortCollection, Init(1, 1));
+      AsortLib[4]   := New(PAsortCollection, Init(1, 1));
+      AsortLib[5]   := New(PAsortCollection, Init(1, 1));
+
+      MessageBox(^C+'Nie moge odczytac asortymentu towar¢w!',nil,
+      mfError+mfOKButton);
+
+    end;
+
+    LibraryStream.Init('SPOZ.LIB', stOpenRead);
+
+    AsortLib[5]   := PAsortCollection(LibraryStream.Get);
+
+    if LibraryStream.Status <> 0 then
+    begin
+
+      AsortLib[5]   := New(PAsortCollection, Init(1, 1));
+
+      MessageBox(^C+'Nie moge odczytac asortymentu spoßywczego!',nil,
+      mfError+mfOKButton);
+
+    end;
+
+
+  end;
+
+  procedure SaveAsortLib;
+  var I, Id : integer;
+
+  begin
+
+  if AsortLib[1] = nil then Exit;
+  if AsortLib[2] = nil then Exit;
+  if AsortLib[3] = nil then Exit;
+  if AsortLib[4] = nil then Exit;
+  if AsortLib[5] = nil then Exit;
+
+  For I := 0 to AsortLib[1]^.Count-1 do
+   begin
+    if AsortLib[2]^.Search(AsortLib[1]^.At(I), Id) = false then
+       AsortLib[2]^.Insert(New(PAsortItem, Init(PAsortItem(AsortLib[1]^.At(I))^.Name^, '0',
+         PAsortItem(AsortLib[1]^.At(I))^.JDM^, PAsortItem(AsortLib[1]^.At(I))^.SWW^,PAsortItem(AsortLib[1]^.At(I))^.VAT^  )));
+
+      if AsortLib[3]^.Search(AsortLib[1]^.At(I), Id) = false then
+       AsortLib[3]^.Insert(New(PAsortItem, Init(PAsortItem(AsortLib[1]^.At(I))^.Name^, '0',
+         PAsortItem(AsortLib[1]^.At(I))^.JDM^, PAsortItem(AsortLib[1]^.At(I))^.SWW^, PAsortItem(AsortLib[1]^.At(I))^.VAT^)));
+
+         if AsortLib[4]^.Search(AsortLib[1]^.At(I), Id) = false then
+       AsortLib[4]^.Insert(New(PAsortItem, Init(PAsortItem(AsortLib[1]^.At(I))^.Name^, '0',
+         PAsortItem(AsortLib[1]^.At(I))^.JDM^, PAsortItem(AsortLib[1]^.At(I))^.SWW^, PAsortItem(AsortLib[1]^.At(I))^.VAT^)));
+   end;
+
+  For I := 0 to AsortLib[2]^.Count-1 do
+   begin
+    if AsortLib[1]^.Search(AsortLib[2]^.At(I), Id) = false then
+       AsortLib[1]^.Insert(New(PAsortItem, Init(PAsortItem(AsortLib[2]^.At(I))^.Name^, '0',
+         PAsortItem(AsortLib[2]^.At(I))^.JDM^, PAsortItem(AsortLib[2]^.At(I))^.SWW^, PAsortItem(AsortLib[2]^.At(I))^.VAT^)));
+
+      if AsortLib[3]^.Search(AsortLib[2]^.At(I), Id) = false then
+       AsortLib[3]^.Insert(New(PAsortItem, Init(PAsortItem(AsortLib[2]^.At(I))^.Name^, '0',
+         PAsortItem(AsortLib[2]^.At(I))^.JDM^, PAsortItem(AsortLib[2]^.At(I))^.SWW^, PAsortItem(AsortLib[2]^.At(I))^.VAT^)));
+
+         if AsortLib[4]^.Search(AsortLib[2]^.At(I), Id) = false then
+       AsortLib[4]^.Insert(New(PAsortItem, Init(PAsortItem(AsortLib[2]^.At(I))^.Name^, '0',
+         PAsortItem(AsortLib[2]^.At(I))^.JDM^, PAsortItem(AsortLib[2]^.At(I))^.SWW^, PAsortItem(AsortLib[2]^.At(I))^.VAT^)));
+   end;
+  For I := 0 to AsortLib[3]^.Count-1 do
+   begin
+    if AsortLib[1]^.Search(AsortLib[3]^.At(I), Id) = false then
+       AsortLib[1]^.Insert(New(PAsortItem, Init(PAsortItem(AsortLib[3]^.At(I))^.Name^, '0',
+         PAsortItem(AsortLib[3]^.At(I))^.JDM^, PAsortItem(AsortLib[3]^.At(I))^.SWW^, PAsortItem(AsortLib[3]^.At(I))^.VAT^)));
+
+      if AsortLib[2]^.Search(AsortLib[3]^.At(I), Id) = false then
+       AsortLib[2]^.Insert(New(PAsortItem, Init(PAsortItem(AsortLib[3]^.At(I))^.Name^, '0',
+         PAsortItem(AsortLib[3]^.At(I))^.JDM^, PAsortItem(AsortLib[3]^.At(I))^.SWW^, PAsortItem(AsortLib[3]^.At(I))^.VAT^)));
+
+         if AsortLib[4]^.Search(AsortLib[3]^.At(I), Id) = false then
+       AsortLib[4]^.Insert(New(PAsortItem, Init(PAsortItem(AsortLib[3]^.At(I))^.Name^, '0',
+         PAsortItem(AsortLib[3]^.At(I))^.JDM^, PAsortItem(AsortLib[3]^.At(I))^.SWW^, PAsortItem(AsortLib[3]^.At(I))^.VAT^)));
+   end;
+  For I := 0 to AsortLib[4]^.Count-1 do
+   begin
+    if AsortLib[1]^.Search(AsortLib[4]^.At(I), Id) = false then
+       AsortLib[1]^.Insert(New(PAsortItem, Init(PAsortItem(AsortLib[4]^.At(I))^.Name^, '0',
+         PAsortItem(AsortLib[4]^.At(I))^.JDM^, PAsortItem(AsortLib[4]^.At(I))^.SWW^, PAsortItem(AsortLib[4]^.At(I))^.VAT^)));
+
+      if AsortLib[3]^.Search(AsortLib[4]^.At(I), Id) = false then
+       AsortLib[3]^.Insert(New(PAsortItem, Init(PAsortItem(AsortLib[4]^.At(I))^.Name^, '0',
+         PAsortItem(AsortLib[4]^.At(I))^.JDM^, PAsortItem(AsortLib[4]^.At(I))^.SWW^, PAsortItem(AsortLib[4]^.At(I))^.VAT^)));
+
+         if AsortLib[2]^.Search(AsortLib[4]^.At(I), Id) = false then
+       AsortLib[2]^.Insert(New(PAsortItem, Init(PAsortItem(AsortLib[4]^.At(I))^.Name^, '0',
+         PAsortItem(AsortLib[4]^.At(I))^.JDM^, PAsortItem(AsortLib[4]^.At(I))^.SWW^, PAsortItem(AsortLib[4]^.At(I))^.VAT^)));
+   end;
+
+    LibraryStream.Init('ASORT.LIB', stCreate);
+
+    LibraryStream.Put( AsortLib[1] );
+    LibraryStream.Put( AsortLib[2] );
+    LibraryStream.Put( AsortLib[3] );
+    LibraryStream.Put( AsortLib[4] );
+
+    LibraryStream.Done;
+    if LibraryStream.Status <> 0 then
+      MessageBox(^C+'Nie mogë zapisaç asortymentu towar¢w!',nil,
+                 mfError+mfOKButton);
+
+    LibraryStream.Init('SPOZ.LIB', stCreate);
+
+    LibraryStream.Put( AsortLib[5] );
+
+    LibraryStream.Done;
+
+    if LibraryStream.Status <> 0 then
+      MessageBox(^C+'Nie mogë zapisaç asortymentu spoßywczego!',nil,
+                 mfError+mfOKButton);
+
+  end;
+
+  function CalcCurrentDate : String;
+   var
+     Year, Month, Day, DayOfWeek : Word;
+     SYear, SMonth, SDay, SDayOfWeek : String;
+     CalculatedDate: String;
+
+   begin
+
+
+      GetDate(Year,Month,Day,DayOfWeek);
+
+      Str(Year, SYear);
+      Str(Month, SMonth);
+      Str(Day, SDay);
+      SDayOfWeek := Days[DayOfWeek];
+      SYear := Copy(SYear, 3, 2);
+
+      if Year < 10 then SYear := '0'+SYear;
+      if Month< 10 then SMonth:= '0'+SMonth;
+      if Day  < 10 then SDay  := '0'+SDay;
+
+      CalculatedDate:= SDay + '-' + SMonth + '-' + SYear;
+
+      CalcCurrentDate := CalculatedDate;
+
+   end;
+
+
+
+  procedure PrintAsortLib(Header : String);
+   var
+     Year, Month, Day, DayOfWeek : Word;
+     SYear, SMonth, SDay, SDayOfWeek : String;
+     DateToBePrinted : String;
+     PRNError : Boolean;
+     L : Integer;
+
+   procedure PrintString ( S : string );
+    begin
+      if PRNError then Exit;
+      Write(Lst, S);
+      if IOResult<>0 then
+       begin
+        if MessageBox(^C+'Brak paieru. Kontynuowaç druk ?',
+                     nil, mfWarning + mfOkButton + mfCancelButton) = cmOK then
+                     begin
+                      Write(Lst, S);
+                      PRNError := false;
+                      Exit;
+                     end;
+       PRNError:=true;
+      end;
+    end;
+
+   procedure InitializePrinter;
+
+     begin
+
+       PRNError := false;
+
+       if MessageBox(^C+'Wloz papier do drukarki i wcisnij ON-LINE',
+                     nil, mfConfirmation + mfOkButton + mfCancelButton) = cmCancel then PRNError := true;
+
+     end;
+
+
+{$F+}
+   procedure PrintAsortLine(P : PAsortItem); Far;
+   var
+      AuxPointer : PAsortItem;
+      AuxValue : LongInt;
+      Control : Integer;
+      ZlotysStr, GrStr : String;
+
+     begin
+
+      Val( P^.Value^, AuxValue, Control );
+      if AuxValue <> 0 then
+      begin
+
+        Str(round (AuxValue / 100) div 100, ZlotysStr );
+        Str((round( AuxValue / 100 ) - (round (AuxValue / 100) div 100)*100), GrStr );
+        if Length(GrStr) = 1 then GrStr := '0' + GrStr;
+
+
+         PrintString('  '+P^.Name^+Copy(Spaces80, 1, NameLength-Length(P^.Name^)) + '  '+
+                ZlotysStr+'.'+GrStr+Copy(Spaces80, 1, ValueLength-Length(ZlotysStr)-3) + '  '+ 'zí. '+
+                Copy(Spaces80, 1, JDMLength-Length(P^.JDM^)) + '   '+P^.JDM^+ '         ' + P^.SWW^ +
+                Copy(Spaces80, 1, SWWLength-Length(P^.SWW^)) +
+                + P^.VAT^+#10#13);
+      end;
+
+      end;
+{$F-}
+
+
+
+
+   begin
+
+    PRNError := true;
+    InitializePrinter;
+    if Not PRNError then
+
+     begin
+
+
+        GetDate(Year,Month,Day,DayOfWeek);
+
+        Str(Year, SYear);
+        Str(Month, SMonth);
+        Str(Day, SDay);
+        SDayOfWeek := Days[DayOfWeek];
+
+        DateToBePrinted := SDayOfWeek + ' ' + SDay + '.' + SMonth + '.' + SYear + #10#13;
+
+
+      PrintString(#10#13);
+      PrintString(DateToBePrinted);
+      PrintString(#10#13);
+
+      For L := 1 to FirmData.TextLen do
+         Write(Lst, FirmData.TextData[L]);
+
+
+      PrintString(#10#13#10#13);
+      PrintString(Header);
+      PrintString(#10#13#10#13);
+      PrintString('------------------------------------------------------------------------------');
+      PrintString(#10#13);
+      PrintString('  Nazwa towaru                    Cena         Jednostka miary  SWW      VAT% ');
+      PrintString(#10#13);
+      PrintString('------------------------------------------------------------------------------');
+      PrintString(#10#13);
+
+
+
+      AsortLib[AsortType]^.ForEach(@PrintAsortLine);
+
+      PrintString('------------------------------------------------------------------------------');
+      PrintString(#10#13#10#13#10#13);
+
+
+
+    end;
+
+   end;
+
+
+
+  function CreateAsortWindow(TitleString : String) : PAsortWindow;
+  var
+   R : TRect;
+   B : PListBox;
+   C : PInputLine;
+   Dialog : PAsortWindow;
+   ScrollBarLine : PScrollBar;
+   Control : Word;
+
+  begin
+
+   R.Assign(0, 0, 56, 17);
+   Dialog := New( PAsortWindow, Init( R, TitleString));
+
+   with Dialog^ do
+   begin
+
+    { Second dialog }
+
+    R.Assign(0, 0, 56, 19);
+
+    SecondDialog := New( PSecondDialog, Init( R, 'Edycja pola'));
+    with SecondDialog^ do
+    begin
+
+      R.Assign( 2, 16, 12, 18);
+      Insert( New( PButton, Init( R, 'O~K~', cmOK, bfDefault)));
+      R.Move( 10, 0);
+      Insert( New( PButton, Init( R, '~P~orzuc', cmCancel, bfNormal)));
+
+      R.Assign( 2, 2, 54, 3);
+      C :=  New( PInputLine, Init( R, 30 ));
+      Insert( C );
+      FirstItemPointer := C;
+      R.Assign( 2,1,54,2);
+      Insert( New( PLabel, Init( R, 'Nazwa towaru', C)));
+
+      R.Assign( 2, 5, 54, 6);
+      C := New( PInputLine, Init( R, 7 ));
+      Insert( C );
+      R.Assign( 2,4,54,5);
+      Insert( New( PLabel, Init( R, 'Wartoûç', C)));
+
+      R.Assign( 2, 8, 54, 9);
+      C := New( PInputLine, Init( R, 4 ));
+      Insert( C );
+      R.Assign( 2,7,54,8);
+      Insert( New( PLabel, Init( R, 'Jednostka miary', C)));
+
+      R.Assign( 2, 11, 54, 12);
+      C := New( PInputLine, Init( R, 10 ));
+      Insert( C );
+      R.Assign( 2,10,54,11);
+      Insert( New( PLabel, Init( R, 'SWW', C)));
+
+      R.Assign( 2, 14, 54, 15);
+      C := New( PInputLine, Init( R, 4 ));
+      Insert( C );
+      R.Assign( 2,13,54,14);
+      Insert( New( PLabel, Init( R, 'Stawka VAT', C)));
+
+
+      Options := Options or ofTopSelect;
+
+    end;
+
+    R.Assign( 2, 14, 12, 16);
+    Insert( New( PButton, Init( R, '~D~odaj', cmAsortAdd, bfNormal)));
+    R.Move(10,0);
+    Insert( New( PButton, Init( R, '~U~sun', cmAsortDelete, bfNormal)));
+    R.Move(12,0);
+    R.Grow(2,0);
+    Insert( New( PButton, Init( R, '~M~odyfikuj', cmAsortModify, bfDefault)));
+
+    R.Assign(52,2,53,12);
+    ScrollBarLine := New( PScrollBar, Init(R));
+    Insert( ScrollBarLine );
+    R.Assign(2, 2, 52, 12);
+
+    B := New( PAsortListBox, Init( R, 1, ScrollBarLine));
+
+    B^. NewList( AsortLib[AsortType] );
+    Insert(B);
+    ListBoxPointer := B;
+
+    Options := Options or ofCentered;
+
+   end;
+
+   if Application^.ValidView( Dialog ) <> nil then
+   begin
+     CreateAsortWindow := Dialog;
+     IsAsort := True;
+   end;
+
+  end;
+
+procedure SpozAsort;
+  var
+   R : TRect;
+   B : PListBox;
+   C : PInputLine;
+   Dialog : PAsortWindow;
+   ScrollBarLine : PScrollBar;
+   Control : Word;
+
+  begin
+
+   R.Assign(0, 0, 56, 17);
+   Dialog := New( PAsortWindow, Init( R, 'Asortyment towar¢w - spoßywczy'));
+
+   with Dialog^ do
+   begin
+
+    { Second dialog }
+
+    R.Assign(0, 0, 56, 19);
+
+    SecondDialog := New( PSecondDialog, Init( R, 'Edycja pola'));
+    with SecondDialog^ do
+    begin
+
+      R.Assign( 2, 16, 12, 18);
+      Insert( New( PButton, Init( R, 'O~K~', cmOK, bfDefault)));
+      R.Move( 10, 0);
+      Insert( New( PButton, Init( R, '~P~orzuc', cmCancel, bfNormal)));
+
+      R.Assign( 2, 2, 54, 3);
+      C :=  New( PInputLine, Init( R, 30 ));
+      Insert( C );
+      FirstItemPointer := C;
+      R.Assign( 2,1,54,2);
+      Insert( New( PLabel, Init( R, 'Nazwa towaru', C)));
+
+      R.Assign( 2, 5, 54, 6);
+      C := New( PInputLine, Init( R, 7 ));
+      Insert( C );
+      R.Assign( 2,4,54,5);
+      Insert( New( PLabel, Init( R, 'Wartoûç', C)));
+
+      R.Assign( 2, 8, 54, 9);
+      C := New( PInputLine, Init( R, 4 ));
+      Insert( C );
+      R.Assign( 2,7,54,8);
+      Insert( New( PLabel, Init( R, 'Jednostka miary', C)));
+
+      R.Assign( 2, 11, 54, 12);
+      C := New( PInputLine, Init( R, 10 ));
+      Insert( C );
+      R.Assign( 2,10,54,11);
+      Insert( New( PLabel, Init( R, 'SWW', C)));
+
+      R.Assign( 2, 14, 54, 15);
+      C := New( PInputLine, Init( R, 4 ));
+      Insert( C );
+      R.Assign( 2,13,54,14);
+      Insert( New( PLabel, Init( R, 'Stawka VAT', C)));
+
+
+      Options := Options or ofTopSelect;
+
+    end;
+
+    R.Assign( 2, 14, 12, 16);
+    Insert( New( PButton, Init( R, '~D~odaj', cmAsortAdd, bfNormal)));
+    R.Move(10,0);
+    Insert( New( PButton, Init( R, '~U~sun', cmAsortDelete, bfNormal)));
+    R.Move(12,0);
+    R.Grow(2,0);
+    Insert( New( PButton, Init( R, '~M~odyfikuj', cmAsortModify, bfDefault)));
+    R.Move(12,0);
+    Insert( New( PButton, Init( R, '~O~K', cmOK, bfNormal)));
+
+    R.Assign(52,2,53,12);
+    ScrollBarLine := New( PScrollBar, Init(R));
+    Insert( ScrollBarLine );
+    R.Assign(2, 2, 52, 12);
+
+    B := New( PAsortListBox, Init( R, 1, ScrollBarLine));
+
+    B^. NewList( AsortLib[5] );
+    Insert(B);
+    ListBoxPointer := B;
+
+    Options := Options or ofCentered;
+
+   end;
+
+   if Application^.ValidView( Dialog ) <> nil then
+   begin
+      DeskTop^.ExecView( Dialog );
+   end;
+
+   if Dialog <> nil then
+   begin
+     if Dialog^.SecondDialog <> nil then Dispose (Dialog^.SecondDialog, Done);
+     Dispose( Dialog, Done );
+   end;
+
+  end;
+
+
+end.  {of unit}
