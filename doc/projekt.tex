@@ -32,6 +32,9 @@ gdzie, \\*
 \item Grupowanie dokumentów na podstawie współczynnika tf-idf. Aktualnie wykorzystywany jest algorytm KMeans oraz odległość Euklidesowa. Próby wykorzystania podobieństwa cosinusowego zakończyły się błędami - wysoce prawdopodobne, że to błąd w bibliotece. 
 \end{enumerate}
 
+\section{Algorytm KMeans}
+Jest to jeden z najprostszych algorytmów uczących się bez wykorzystania nauczyciela (ang. unsupervised) rozwiązującym problem grupowania. Dane, punkty, a w przypadku tego projektu, dokumnety są przypisywane do grup, których liczba \emph{k} musi być z góry określona. Spośród dostępnych punktów, dokumnetów należy wybrać \emph{k} które będą centrami, rdzeniami grup. Można to zrobić w sposób losowy, ale trzeba pamiętać, że wybór punktów centralnych istotnie wpływa na wynik grupowania. Dobrze jest użyć punktów możliwie od siebie oddalonych. W kolejnym kroku, każdy dokument zostaje przypisany do grupy której rdzeń znajduje się najbliżej. Po wykonaniu tej procedury dla wszystkich dokumentów pierwszy etap działania algorytmu jest zakończony. Następuje obliczenie nowych rdzeni dla wszystkich grup poprzez odnalezienie punktu leżącego możliwie blisko środka grupy. W tym momencie ponownie trzeba przypisać dokumenty do grupy której rdzeń jest najbliżej - pętla. Algorytm kończy działanie kiedy nie obserwuje się już zmian punktów rdzeniowych.
+
 \section{Narzędzia}
 Projekt został zaimplementowany w języku Python. Wynika to z łatwości języka i ilością dostępnych bibliotek zapewniających stopień abstrakcji umożliwiający skupienie się na rozwiązaniu problemu bez koniczności implementacji algorytmów składowych.
 
