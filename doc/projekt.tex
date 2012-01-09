@@ -39,6 +39,20 @@ Głównym ogniwem jest przedstawiona na wykładzie biblioteka nltk zapewniająca
 
 Kod projekt jest objęty systemem kontroli wersji i dostępny pod adresem: http://github.com/pejotr/doc-clustering
 
+\section{Uruchomienie}
+Kod projektu można pobrać z serwisu Github zarówno jako skompresowane archiwum ZIP, lub przy pomocy GIT CVS. Drugie rozwiązanie jest o tyle lepsze, że umożliwia szybkie uaktualnienie posiadanej wersji kodu do najnowszej dostępnej. Uruchomienie wymaga zainstalowanego interpretera python a także bibliotek \emph{nltk}, \emph{lxml2} oraz \emph{numpy}.
+
+Dostępne parametry modyfikujące działanie algorytmu wyświetlane są po wykonaiu polecenia \emph{python main.py -{}-help} i są to:
+\begin{description}
+\item [\texttt{-{}-usehtml}] Używanie tagów HTML do lepszej oceny treści dokumentu, \emph{domyślnie False}
+\item [\texttt{-{}-cosine}] Użycie podobieństwa cosinusowego, zamiast domyślnego euklidesowego
+\item [\texttt{-{}-title}] Waga słów zawartych pomiędzy znacznikami <title></title>, \emph{domyślnie 1}
+\item [\texttt{-{}-h1}] Waga słów zawartych pomiędzy znacznikami <h1></h1>, \emph{domyślnie 1}
+\item [\texttt{-{}-freq}] Liczba najpopularniejszych wyrazów, wykorzystanych w procesie grupowania
+\item [\texttt{-{}-groups}] Maksymalna liczba grup
+\item [\texttt{-{}-repeats}] Liczba powtórzeń w algorytmie KMeans
+\end{description}
+
 \begin{thebibliography}{9}
 \bibitem{SimMes}
 A. Huang, \emph{Similarity Measures for Text Document Clustering}, Department of Computer Science, The University of Waikato, Hamilton, New Zealand
