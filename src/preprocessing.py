@@ -15,6 +15,9 @@ from nltk.stem import PorterStemmer
 from nltk.corpus import stopwords
 from nltk.probability import FreqDist
 
+TITLE_WEIGHT  = 5 
+HEADER_WEIGHT = 2 
+
 def compute_tfidf(document, documents):
     logging.info("Computing tfidf values for document: " + document['docname'])
 
@@ -30,7 +33,6 @@ def compute_tfidf(document, documents):
 
 # dodatkowy znacznik HAS_HMTL ???
 def evaluate_html(content, html_conf):
-    
     fdist = FreqDist()
     if html_conf['usehtml'] == False:
         logging.info('Discarding HTML tags')
