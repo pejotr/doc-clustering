@@ -56,6 +56,47 @@ Dostępne parametry modyfikujące działanie algorytmu wyświetlane są po wykon
 \item [\texttt{-{}-repeats}] Liczba powtórzeń w algorytmie KMeans
 \end{description}
 
+\section{Testy}
+Weryfikacja poprawności działania algorytmu została przeprowadzona poprzez porównanie wyniku działania programu z recznym pogrupowaniem dokumentów dokonanym przeze mnie. Zauważono, że domyślne wartości i wykorzystanie najprostszej funkcji podobieństwa ( podobieństwa Euklidesowego ) nie daje satysfakcjonujących wyników. Najlepszy rezultat uzyskano przy wykorzystananiu podobieństwa cosinusowego, wartościowowaniu znacznika <title></title> z wagą 7 przy 50 powtórzeniach. Odpowiada to uruchomieniu programu z następującymi parametrami: \emph{python2 src/main.py data/dev-data/ -{}-cosine -{}-usehtml -{}-groups=5  -{}-title=7}. Wynik działania:
+
+\begin{table}[h]
+\begin{center}
+\begin{tabular}{ | c | c | }
+\hline
+Dokumenty & Grupa \\ \hline
+42-48, 26, 30, 35 & 1 \\ \hline
+5-13 & 2 \\ \hline
+21-25, 27-29, 31-34, 36-41 & 0 \\ \hline
+1-4, 14-16 & 4 \\ \hline
+17-20 & 3 \\ \hline
+\end{tabular}
+\end{center}
+\caption{\emph{python main.py dev-data/ -{}-cosine -{}-usehtml -{}-groups=5  -{}-title=7}}
+\end{table}
+
+Zwiększenie ilości grup do np. 7, sprawia że algorytm rozdzielił informajce dotyczące kawy do wiekszej liczby grup, jednak nie wszystkie grupy są wykorzystane. Pozostałe dokumenty nadal pozostają w tym samym klastrze.
+
+\begin{table}[h]
+\begin{center}
+\begin{tabular}{ | c | c | }
+\hline
+Dokumenty & Grupa \\ \hline
+42-48, 26, 35, 40 & 3 \\ \hline
+5-13 & 4 \\ \hline
+21-25, 28-29, 31, 33, 36-38 & 0 \\ \hline
+27 & 2 \\ \hline
+30, 32, 34, 39, 41 & 1 \\ \hline
+1-4, 14-16 & 4 \\ \hline
+17-20 & 3 \\ \hline
+\end{tabular}
+\caption{\emph{python main.py dev-data/ -{}-cosine-{}-usehtml -{}-groups=7 -{}-title=7}}
+\end{center}
+\end{table}
+
+Ponieważ punkty rdzeniowe grup wybierane są losowo, wyniki przeprowadzone na innym komputerze w innym czasie mogą się nieznacznie różnic od zaprezentowanych.
+
+\section{Wnioski}
+
 \begin{thebibliography}{9}
 \bibitem{SimMes}
 A. Huang, \emph{Similarity Measures for Text Document Clustering}, Department of Computer Science, The University of Waikato, Hamilton, New Zealand

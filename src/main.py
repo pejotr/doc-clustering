@@ -1,7 +1,7 @@
 import sys
 import logging
-import getopt
 import preprocessing
+import argparse
 
 DEF_HTML_USE_TAGS      = False
 DEF_HTML_TITLE_WEIGHT  = 1 
@@ -11,49 +11,41 @@ DEF_GROUP_CNT          = 3
 DEF_USE_COSINE         = False
 DEF_REPEATS            = 20
 
-def usage():
-    print "python main.py path_to_documents"
-    print "Opcje: "
-    print "\t--usehtml  - wykorzystanie tagow HTML do analizy dokumentow"
-    print "\t--cosine   - wykorzystanie podobienstwa cosinusowego zamiast euklidesowego"
-    print "\t--title=n  - wartosc slow zawartych pomiedzy tagami <title></title>"
-    print "\t--h1=n     - wartosc slow zawartych pomiedzy tagami <h1></h1>"
-    print "\t--freq=n   - liczba najczesciej wystepujacych slow wykorzystana do grupowania"
-    print "\t--groups=n - maksymalna liczba grup"
-    print "\t--repeats  - liczba prob grupowania"
-    
-
 def main(argv):
     logging.basicConfig(format='%(levelname)s:%(message)s', level=logging.DEBUG)
+    
+    parser = argparse.ArgumentParser(description='Cluster given HTML and plaintext documents.')
+    parser.add_argument('datadir', metavar='datadir', help='directory where documents for clustering are stored')
 
-    print argv[1:]
-    opts, extraparams = getopt.getopt(argv[1:], "",['nohtml', 'cosine', 'title=', 'h1=', 'freq=', 'groups=', 'repeats='])
+    parser.add_argument('--usehtml', dest='html_use_tags', action='store_true', default=DEF_HTML_USE_TAGS,
+                       help='use HMTL tags for text analysis (default: false)')
 
+    parser.add_argument('--cosine', dest='use_cosine', action='store_true', default=DEF_USE_COSINE, 
+                       help='use cosine similarity instead of euclidean (default: false)')
 
-    html_use_tags     = DEF_HTML_USE_TAGS
-    html_title_weight = DEF_HTML_TITLE_WEIGHT
-    html_h1_weight    = DEF_HTML_H1_WEIGHT
-    top_freq_terms    = DEF_TOP_FREQ_TERMS
-    group_cnt         = DEF_GROUP_CNT
-    use_cosine        = DEF_USE_COSINE
+    parser.add_argument('--title', dest='html_title_weight', action='store', type=int, default=DEF_HTML_TITLE_WEIGHT, 
+                       help='title weight (default: 1)')
 
-    for o,p in opts :
-        if   o in ['--nohtml'] :
-            html_use_tags = False 
-        elif o in ['--title']  :
-            html_title_weight = int(p)
-        elif o in ['--h1']     : 
-            html_h1_weight = int(p)
-        elif o in ['--freq']   :
-            top_freq_terms = p
-        elif o in ['--groups'] :
-            group_cnt = int(p)
-        elif o in ['--cosine'] :  
-            use_cosine = True
-        elif o in ['--repeats'] :
-            repeats = int(p)
-            
-            
+    parser.add_argument('--h1', dest='html_h1_weight', action='store', type=int, default=DEF_HTML_TITLE_WEIGHT, 
+                       help='title weight (default: 1)')
+
+    parser.add_argument('--freq', dest='top_freq_terms', action='store', type=int, default=DEF_TOP_FREQ_TERMS, 
+                       help='number of top fequent terms for clustering (default: 2000)')
+    
+    parser.add_argument('--groups', dest='group_cnt', action='store', type=int, default=DEF_GROUP_CNT, 
+                       help='number of groups (default: 3)')
+
+    parser.add_argument('--repeats', dest='repeats', action='store', type=int, default=DEF_REPEATS, 
+                       help='repeats in KMeans algorithm (default: 20)')
+
+    args = parser.parse_args()
+    html_use_tags     = args.html_use_tags
+    html_title_weight = args.html_title_weight
+    html_h1_weight    = args.html_h1_weight
+    top_freq_terms    = args.top_freq_terms
+    group_cnt         = args.group_cnt
+    use_cosine        = args.use_cosine
+    repeats           = args.repeats
 
     html_conf = {'usehtml': html_use_tags, 'title': html_title_weight, 'h1': html_h1_weight}
 
@@ -65,6 +57,4 @@ def main(argv):
 
 
 if __name__ == "__main__" :
-
-    usage()
-    #main(sys.argv[1:])
+    main(sys.argv[1:])
