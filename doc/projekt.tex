@@ -93,9 +93,13 @@ Dokumenty & Grupa \\ \hline
 \end{center}
 \end{table}
 
-Ponieważ punkty rdzeniowe grup wybierane są losowo, wyniki przeprowadzone na innym komputerze w innym czasie mogą się nieznacznie różnic od zaprezentowanych.
+Ponieważ punkty rdzeniowe grup wybierane są losowo, wyniki przeprowadzone na innym komputerze w innym czasie mogą się nieznacznie różnić od zaprezentowanych.
 
 \section{Wnioski}
+
+\section{Poprawność grupowania}
+Znanych jest kilka metod sprawdzenia skuteczności, poprawności grupowania. Jednym z nich jest entropia. Entropia grupy \( C_{i} \) o rozmiarze \( n_{i} \) zdefiniowana jest następująco:
+\( E(C_{i}) = -\frac{1}{\log(c)}\sum_{h=1}^{k}\frac{n_i^h}{n_i}\log(\frac{n_i^h}{n_i}) \), gdzie \emph{c} jest ilością kategorii w zbiorze danych, a \( n_i^h  \) jest liczbą dokumentów z klasy \emph{h} przypisanych do grupy \emph{i}. Inny, prostszy algorytmy \emph{purity}, również wymagaja sklasyfikowanych danych. W związku z tym niemożliwe jest ocenienie jakości grupowania bez uprzedniej klasyfikacji. Można to zrobić tylko ręcznie, o ile zbiór danych nie jest zbyt duży.
 
 \begin{thebibliography}{9}
 \bibitem{SimMes}
