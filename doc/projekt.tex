@@ -43,7 +43,7 @@ Głównym ogniwem jest przedstawiona na wykładzie biblioteka nltk zapewniająca
 Kod projekt jest objęty systemem kontroli wersji i dostępny pod adresem: http://github.com/pejotr/doc-clustering
 
 \section{Uruchomienie}
-Kod projektu można pobrać z serwisu Github zarówno jako skompresowane archiwum ZIP, lub przy pomocy GIT CVS. Drugie rozwiązanie jest o tyle lepsze, że umożliwia szybkie uaktualnienie posiadanej wersji kodu do najnowszej dostępnej. Uruchomienie wymaga zainstalowanego interpretera python a także bibliotek \emph{nltk}, \emph{lxml2} oraz \emph{numpy}.
+Kod projektu można pobrać z serwisu Github zarówno jako skompresowane archiwum ZIP, lub przy pomocy GIT CVS. Drugie rozwiązanie jest o tyle lepsze, że umożliwia szybkie uaktualnienie posiadanej wersji kodu do najnowszej dostępnej. Uruchomienie wymaga zainstalowanego interpretera python a także bibliotek \emph{nltk}, \emph{lxml2} oraz \emph{numpy}. Wszystkie można zainstalować z repozytorium apt w przypadku Ubuntu, lub pacman w pzypadku ArchLinux.
 
 Dostępne parametry modyfikujące działanie algorytmu wyświetlane są po wykonaiu polecenia \emph{python main.py -{}-help} i są to:
 \begin{description}
@@ -57,16 +57,16 @@ Dostępne parametry modyfikujące działanie algorytmu wyświetlane są po wykon
 \end{description}
 
 \section{Testy}
-Weryfikacja poprawności działania algorytmu została przeprowadzona poprzez porównanie wyniku działania programu z recznym pogrupowaniem dokumentów dokonanym przeze mnie. Zauważono, że domyślne wartości i wykorzystanie najprostszej funkcji podobieństwa ( podobieństwa Euklidesowego ) nie daje satysfakcjonujących wyników. Najlepszy rezultat uzyskano przy wykorzystananiu podobieństwa cosinusowego, wartościowowaniu znacznika <title></title> z wagą 7 przy 50 powtórzeniach. Odpowiada to uruchomieniu programu z następującymi parametrami: \emph{python2 src/main.py data/dev-data/ -{}-cosine -{}-usehtml -{}-groups=5  -{}-title=7}. Wynik działania:
+Weryfikacja poprawności działania algorytmu została przeprowadzona poprzez porównanie wyniku działania programu z recznym pogrupowaniem dokumentów dokonanym przeze mnie. Zauważono, że domyślne wartości i wykorzystanie najprostszej funkcji podobieństwa ( podobieństwa Euklidesowego ) nie daje satysfakcjonujących wyników. Najlepszy rezultat uzyskano przy wykorzystananiu podobieństwa cosinusowego, wartościowowaniu znacznika <title></title> z wagą 7 przy 50 powtórzeniach. Odpowiada to uruchomieniu programu z następującymi parametrami: \emph{python2 src/main.py data/dev-data/ -{}-cosine -{}-usehtml -{}-groups=5  -{}-title=7}. Wynik jest przedstawiony w Table 1. 
 
 \begin{table}[h]
 \begin{center}
 \begin{tabular}{ | c | c | }
 \hline
 Dokumenty & Grupa \\ \hline
-42-48, 26, 30, 35 & 1 \\ \hline
+42-48, 26, 30, 32, 35 & 1 \\ \hline
 5-13 & 2 \\ \hline
-21-25, 27-29, 31-34, 36-41 & 0 \\ \hline
+21-25, 27-29, 32-34, 36-41 & 0 \\ \hline
 1-4, 14-16 & 4 \\ \hline
 17-20 & 3 \\ \hline
 \end{tabular}
@@ -74,7 +74,7 @@ Dokumenty & Grupa \\ \hline
 \caption{\emph{python main.py dev-data/ -{}-cosine -{}-usehtml -{}-groups=5  -{}-title=7}}
 \end{table}
 
-Zwiększenie ilości grup do np. 7, sprawia że algorytm rozdzielił informajce dotyczące kawy do wiekszej liczby grup, jednak nie wszystkie grupy są wykorzystane. Pozostałe dokumenty nadal pozostają w tym samym klastrze.
+Zwiększenie ilości grup do np. 7, sprawia że algorytm rozdzielił informajce dotyczące kawy do wiekszej liczby grup, jednak nie wszystkie grupy są wykorzystane. Pozostałe dokumenty nadal pozostają w tym samym klastrze (Tabela 2).
 
 \begin{table}[h]
 \begin{center}
@@ -96,10 +96,13 @@ Dokumenty & Grupa \\ \hline
 Ponieważ punkty rdzeniowe grup wybierane są losowo, wyniki przeprowadzone na innym komputerze w innym czasie mogą się nieznacznie różnić od zaprezentowanych.
 
 \section{Wnioski}
+Mimo dośc prostego algorytmu, grupowanie odbywa się lepiej niż początkowo zakładałem. W szczególności, do dobrej grupy trafiają wszystkie dokumenty, zawierające internetowe strony domowe. W czasie wielu prób które przeprowadziłem w ceku odnalezienie parametrów które zbliżyły by wynik działania programu do ręcznego grupowania, zauważyłem że często do nie odpowiedniej klasy trafia dokument case32.txt. Mimo że treść tego pliku, dla człowieka, zawiera informacje dotyczące kawy, to dla zaprezentowanego algorytmu nie jestto takie oczywiste i pasuje bardziej do informacji finansowych lub kodu Pascala. Jest to zapewne spowodowane tym, że case32.txt zawiera informacje statystyczne, pogodowe. Algorytm nie jest na tyle inteligentny, żeby zrozumieć choć częściowo sens treści i stąd błędne przypisanie.
 
 \section{Poprawność grupowania}
 Znanych jest kilka metod sprawdzenia skuteczności, poprawności grupowania. Jednym z nich jest entropia. Entropia grupy \( C_{i} \) o rozmiarze \( n_{i} \) zdefiniowana jest następująco:
 \( E(C_{i}) = -\frac{1}{\log(c)}\sum_{h=1}^{k}\frac{n_i^h}{n_i}\log(\frac{n_i^h}{n_i}) \), gdzie \emph{c} jest ilością kategorii w zbiorze danych, a \( n_i^h  \) jest liczbą dokumentów z klasy \emph{h} przypisanych do grupy \emph{i}. Inny, prostszy algorytmy \emph{purity}, również wymagaja sklasyfikowanych danych. W związku z tym niemożliwe jest ocenienie jakości grupowania bez uprzedniej klasyfikacji. Można to zrobić tylko ręcznie, o ile zbiór danych nie jest zbyt duży.
+Mimo że w internecie, zdecydowanie bardziej powszechne są dane do klasyfikowania, można też znaleźć dane dedykowane do grupowania. Niestety trudno z nich skorzystać, gdyż nie udostępnione są jakiekolwiek dane na temat poprawnego grupowania. Sporo jest również danych w formie przygotowanej do obróbki w narzędziac bazodanowych. 
+Ze znalenioznych zbiorów dość ciekawym jest Bag-of-words, nie są to typowe dokumenty, a raczej jak wskazuje nazwa lista słów wraz z iloscią wystąpień i przynależnością do dokumentu. Oczywiście można przeprowadzić grupowanie takiego zbioru, jednak weryfikacja jest dość kłopotliwa.
 
 \begin{thebibliography}{9}
 \bibitem{SimMes}

@@ -28,7 +28,6 @@ def compute_tfidf(document, documents):
 
     return tfidf
 
-# dodatkowy znacznik HAS_HMTL ???
 def evaluate_html(content, html_conf):
     fdist = FreqDist()
     if html_conf['usehtml'] == False:
@@ -129,7 +128,7 @@ def cluster(documents, terms, mostfreq, groups, use_cosine, repeats):
         clusterer = KMeansClusterer(groups, cosine_distance, repeats)
     else :
         logging.info("Using euclidean similarity function")
-        clusterer = KMeansClusterer(groups, euclidean_distance, repeats)
+        clusterer = KMeansClusterer(groups, euclidean_distance, repeats, avoid_empty_clusters = True)
 
     clusters  = clusterer.cluster(vectors, True, trace = False)
 
