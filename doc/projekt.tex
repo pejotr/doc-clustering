@@ -56,7 +56,7 @@ Dostępne parametry modyfikujące działanie algorytmu wyświetlane są po wykon
 \item [\texttt{-{}-repeats}] Liczba powtórzeń w algorytmie KMeans
 \end{description}
 
-W folderze data/bag-of-words dostepne są 2 pliki z dokumentami przeznaczonymi do grupowania, pobrane ze strony http://archive.ics.uci.edu/ml/datasets/Bag+of+Words. Cały zbiór zawiera 1500 dokumentów. Na potrzeby projektu, skróciłem go do 108. Format danych zawarty jest na wspomnianej wyżej stronie. Do współpracy z projektem, konieczne jest prztworzenie obu plików w postać dokumentów. Do tego służy prosty skrypt \emph{bag2files.py} który w katalogu \emph{files} umieści wygenerowane dokumenty.
+W folderze data/bag-of-words dostepne są 2 pliki z dokumentami przeznaczonymi do grupowania, pobrane ze strony http://archive.ics.uci.edu/ml/datasets/Bag+of+Words. Cały zbiór zawiera 1500 dokumentów. Na potrzeby projektu, skróciłem go do 108. Format danych zawarty jest na wspomnianej wyżej stronie. Do współpracy z projektem, konieczne jest prztworzenie obu plików w postać dokumentów. Do tego służy prosty skrypt \emph{bag2files.py} który w katalogu \emph{files} umieści wygenerowane dokumenty. Niestety, są to czysto tekstowe dokumenty zatem wartościowanie HMTL nie ma sensu.
 
 \section{Testy}
 Weryfikacja poprawności działania algorytmu została przeprowadzona poprzez porównanie wyniku działania programu z recznym pogrupowaniem dokumentów dokonanym przeze mnie. Ze względu na liczbę do testów posłuzyły dokumenty dostępne na stronie przedmiotu. Zauważono, że domyślne wartości i wykorzystanie najprostszej funkcji podobieństwa ( podobieństwa Euklidesowego ) nie daje satysfakcjonujących wyników. Najlepszy rezultat uzyskano przy wykorzystananiu podobieństwa cosinusowego, wartościowowaniu znacznika <title></title> z wagą 7 przy 50 powtórzeniach. Odpowiada to uruchomieniu programu z następującymi parametrami: \emph{python2 src/main.py data/dev-data/ -{}-cosine -{}-usehtml -{}-groups=5  -{}-title=7}. Wynik jest przedstawiony w Table 1. 
@@ -98,7 +98,7 @@ Dokumenty & Grupa \\ \hline
 Ponieważ punkty rdzeniowe grup wybierane są losowo, wyniki przeprowadzone na innym komputerze w innym czasie mogą się nieznacznie różnić od zaprezentowanych.
 
 \section{Wnioski}
-Mimo dośc prostego algorytmu, grupowanie odbywa się lepiej niż początkowo zakładałem. W szczególności, do dobrej grupy trafiają wszystkie dokumenty, zawierające internetowe strony domowe. W czasie wielu prób które przeprowadziłem w ceku odnalezienie parametrów które zbliżyły by wynik działania programu do ręcznego grupowania, zauważyłem że często do nie odpowiedniej klasy trafia dokument case32.txt. Mimo że treść tego pliku, dla człowieka, zawiera informacje dotyczące kawy, to dla zaprezentowanego algorytmu nie jestto takie oczywiste i pasuje bardziej do informacji finansowych lub kodu Pascala. Jest to zapewne spowodowane tym, że case32.txt zawiera informacje statystyczne, pogodowe. Algorytm nie jest na tyle inteligentny, żeby zrozumieć choć częściowo sens treści i stąd błędne przypisanie.
+Mimo dośc prostego algorytmu, grupowanie odbywa się lepiej niż początkowo zakładałem. W szczególności, do dobrej grupy trafiają wszystkie dokumenty zawierające internetowe strony domowe. W czasie wielu prób które przeprowadziłem w ceku odnalezienie parametrów które zbliżyły by wynik działania programu do ręcznego grupowania, zauważyłem że często do nie odpowiedniej klasy trafia dokument case32.txt. Mimo że treść tego pliku, dla człowieka, zawiera informacje dotyczące kawy, to dla zaprezentowanego algorytmu nie jestto takie oczywiste i pasuje bardziej do informacji finansowych lub kodu Pascala. Jest to zapewne spowodowane tym, że case32.txt zawiera informacje statystyczne, pogodowe. Algorytm nie jest na tyle inteligentny, żeby zrozumieć choć częściowo sens dokumentu i stąd błędne przypisanie.
 
 Popularna biblioteka NLTK do analizy języka naturalnego dla Pythona wydaje się uszkodzona w przypadku algorymtu grupowania KMeans. Czasem zdarza się, że pojawia sie błąd związany z centrum pustego klastra. Niestety, jest to asercja więc natychmiast przerywa działanie programu. Sugerowane rozwiązanie również nie zdaje egzaminu. Niestety, im więcej dokumentów poddanych analizie tym prawdopodobieństwo wystąpienia błędu jest większe.
 \begin{quotation}
@@ -107,6 +107,8 @@ Try setting argument avoid\_empty\_clusters to True \\
 (...) \\
 AssertionError
 \end{quotation}
+
+Gdyby nie problemy z biblioteką, projekt w mojej ocenie można by uznać za w pełni udany. Projekt wykorzystauje zarówno treść dokumentu a także w przypadku HMTL strukturę. 
 
 \section{Poprawność grupowania}
 Znanych jest kilka metod sprawdzenia skuteczności, poprawności grupowania. Jednym z nich jest entropia. Entropia grupy \( C_{i} \) o rozmiarze \( n_{i} \) zdefiniowana jest następująco:
