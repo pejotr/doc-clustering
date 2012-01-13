@@ -43,10 +43,11 @@ Głównym ogniwem jest przedstawiona na wykładzie biblioteka nltk zapewniająca
 Kod projekt jest objęty systemem kontroli wersji i dostępny pod adresem: http://github.com/pejotr/doc-clustering
 
 \section{Uruchomienie}
-Kod projektu można pobrać z serwisu Github zarówno jako skompresowane archiwum ZIP, lub przy pomocy GIT CVS. Drugie rozwiązanie jest o tyle lepsze, że umożliwia szybkie uaktualnienie posiadanej wersji kodu do najnowszej dostępnej. Uruchomienie wymaga zainstalowanego interpretera python a także bibliotek \emph{nltk}, \emph{lxml2} oraz \emph{numpy}. Wszystkie można zainstalować z repozytorium apt w przypadku Ubuntu, lub pacman w pzypadku ArchLinux.
+Kod projektu można pobrać z serwisu Github zarówno jako skompresowane archiwum ZIP, lub przy pomocy GIT CVS. Drugie rozwiązanie jest o tyle lepsze, że umożliwia szybkie uaktualnienie posiadanej wersji kodu do najnowszej dostępnej. Uruchomienie wymaga zainstalowanego interpretera python a także bibliotek \emph{nltk}, \emph{lxml} oraz \emph{numpy}. Wszystkie można zainstalować z repozytorium apt w przypadku Ubuntu, lub pacman w pzypadku ArchLinux. W przypadku Ubuntu, konieczne jest też doinstalowanie pakietu \emph{python-argparse}.
 
 Dostępne parametry modyfikujące działanie algorytmu wyświetlane są po wykonaiu polecenia \emph{python main.py -{}-help} i są to:
 \begin{description}
+\item [\texttt{-h --help}] Wyświetla wszystkie opcje programu wraz z krótkim opisem
 \item [\texttt{-{}-usehtml}] Używanie tagów HTML do lepszej oceny treści dokumentu, \emph{domyślnie False}
 \item [\texttt{-{}-cosine}] Użycie podobieństwa cosinusowego, zamiast domyślnego euklidesowego
 \item [\texttt{-{}-title}] Waga słów zawartych pomiędzy znacznikami <title></title>, \emph{domyślnie 1}
@@ -56,7 +57,9 @@ Dostępne parametry modyfikujące działanie algorytmu wyświetlane są po wykon
 \item [\texttt{-{}-repeats}] Liczba powtórzeń w algorytmie KMeans
 \end{description}
 
-W folderze data/bag-of-words dostepne są 2 pliki z dokumentami przeznaczonymi do grupowania, pobrane ze strony http://archive.ics.uci.edu/ml/datasets/Bag+of+Words. Cały zbiór zawiera 1500 dokumentów. Na potrzeby projektu, skróciłem go do 108. Format danych zawarty jest na wspomnianej wyżej stronie. Do współpracy z projektem, konieczne jest prztworzenie obu plików w postać dokumentów. Do tego służy prosty skrypt \emph{bag2files.py} który w katalogu \emph{files} umieści wygenerowane dokumenty. Niestety, są to czysto tekstowe dokumenty zatem wartościowanie HMTL nie ma sensu.
+W folderze data/bag-of-words dostepne są 2 pliki z dokumentami przeznaczonymi do grupowania, pobrane ze strony http://archive.ics.uci.edu/ml/datasets/Bag+of+Words. Cały zbiór zawiera 1500 dokumentów. Na potrzeby projektu, skróciłem go do 108. Format danych zawarty jest na wspomnianej wyżej stronie. Do współpracy z projektem, konieczne jest przetworzenie obu plików w postać dokumentów. W tym celu powstał prosty skrypt \emph{bag2files.py} który w katalogu \emph{files}(trzeba utworzyć ręcznie) umieści wygenerowane dokumenty. Niestety, są to czysto tekstowe dokumenty zatem wartościowanie HMTL nie ma sensu.
+
+W folderze data/dev-data umieściłem dokumenty pobrane ze strony przedmiotu, ale pogrupowane samodzielnie. Numery dokumentów są zachowane, zatem kawa32.txt odpowiada plikowi case32.txt.
 
 \section{Testy}
 Weryfikacja poprawności działania algorytmu została przeprowadzona poprzez porównanie wyniku działania programu z recznym pogrupowaniem dokumentów dokonanym przeze mnie. Ze względu na liczbę do testów posłuzyły dokumenty dostępne na stronie przedmiotu. Zauważono, że domyślne wartości i wykorzystanie najprostszej funkcji podobieństwa ( podobieństwa Euklidesowego ) nie daje satysfakcjonujących wyników. Najlepszy rezultat uzyskano przy wykorzystananiu podobieństwa cosinusowego, wartościowowaniu znacznika <title></title> z wagą 7 przy 50 powtórzeniach. Odpowiada to uruchomieniu programu z następującymi parametrami: \emph{python2 src/main.py data/dev-data/ -{}-cosine -{}-usehtml -{}-groups=5  -{}-title=7}. Wynik jest przedstawiony w Table 1. 
@@ -76,7 +79,7 @@ Dokumenty & Grupa \\ \hline
 \caption{\emph{python main.py dev-data/ -{}-cosine -{}-usehtml -{}-groups=5  -{}-title=7}}
 \end{table}
 
-Zwiększenie ilości grup do np. 7, sprawia że algorytm rozdzielił informajce dotyczące kawy do wiekszej liczby grup, jednak nie wszystkie grupy są wykorzystane. Pozostałe dokumenty nadal pozostają w tym samym klastrze (Tabela 2).
+Zwiększenie ilości grup do np. 7, sprawia że algorytm rozdzielił informajce dotyczące kawy do wiekszej liczby grup. Pozostałe dokumenty nadal pozostają w tym samym klastrze (Tabela 2).
 
 \begin{table}[h]
 \begin{center}
@@ -88,25 +91,47 @@ Dokumenty & Grupa \\ \hline
 21-25, 28-29, 31, 33, 36-38 & 0 \\ \hline
 27 & 2 \\ \hline
 30, 32, 34, 39, 41 & 1 \\ \hline
-1-4, 14-16 & 4 \\ \hline
-17-20 & 3 \\ \hline
+1-4, 14-16 & 5 \\ \hline
+17-20 & 6 \\ \hline
 \end{tabular}
 \caption{\emph{python main.py dev-data/ -{}-cosine-{}-usehtml -{}-groups=7 -{}-title=7}}
+\end{center}
+\end{table}
+
+Uruchomienie programu w domyślnej konfigracji tj. bez wartościowania tagów HTML, z podobieństwem Euclidesowym pokazuje jak istotne jest wykorzystanie dodatakowych informacji o strukturze dokumentu (Tablica 3). 
+
+\begin{table}[h]
+\begin{center}
+\begin{tabular}{ | c | c | }
+\hline
+Dokumenty & Grupa \\ \hline
+5-13 & 4 \\ \hline
+17-20, 22-47 & 3 \\ \hline
+48 & 1 \\ \hline
+27 & 2 \\ \hline
+1, 2, 14-16 & 5 \\ \hline
+4 & 6 \\ \hline
+21 & 0 \\ \hline
+\end{tabular}
+\caption{\emph{python main.py dev-data/ -{}-groups=7}}
 \end{center}
 \end{table}
 
 Ponieważ punkty rdzeniowe grup wybierane są losowo, wyniki przeprowadzone na innym komputerze w innym czasie mogą się nieznacznie różnić od zaprezentowanych.
 
 \section{Wnioski}
-Mimo dośc prostego algorytmu, grupowanie odbywa się lepiej niż początkowo zakładałem. W szczególności, do dobrej grupy trafiają wszystkie dokumenty zawierające internetowe strony domowe. W czasie wielu prób które przeprowadziłem w ceku odnalezienie parametrów które zbliżyły by wynik działania programu do ręcznego grupowania, zauważyłem że często do nie odpowiedniej klasy trafia dokument case32.txt. Mimo że treść tego pliku, dla człowieka, zawiera informacje dotyczące kawy, to dla zaprezentowanego algorytmu nie jestto takie oczywiste i pasuje bardziej do informacji finansowych lub kodu Pascala. Jest to zapewne spowodowane tym, że case32.txt zawiera informacje statystyczne, pogodowe. Algorytm nie jest na tyle inteligentny, żeby zrozumieć choć częściowo sens dokumentu i stąd błędne przypisanie.
+Mimo dość prostego algorytmu, grupowanie odbywa się lepiej niż początkowo zakładałem. W szczególności, do dobrej grupy trafiają wszystkie dokumenty zawierające internetowe strony domowe. W czasie wielu prób które przeprowadziłem w celu odnalezienie parametrów które zbliżyłyby wynik działania programu do ręcznego grupowania, zauważyłem że często do nie odpowiedniej klasy trafia dokument case32.txt. Mimo że treść tego pliku, dla człowieka, zawiera informacje dotyczące kawy, to dla zaprezentowanego algorytmu nie jest to takie oczywiste i pasuje bardziej do informacji finansowych lub kodu Pascala. Jest to zapewne spowodowane tym, że case32.txt zawiera informacje statystyczne, pogodowe. Algorytm nie jest na tyle inteligentny, żeby zrozumieć choć częściowo sens dokumentu i stąd błędne przypisanie.
 
-Popularna biblioteka NLTK do analizy języka naturalnego dla Pythona wydaje się uszkodzona w przypadku algorymtu grupowania KMeans. Czasem zdarza się, że pojawia sie błąd związany z centrum pustego klastra. Niestety, jest to asercja więc natychmiast przerywa działanie programu. Sugerowane rozwiązanie również nie zdaje egzaminu. Niestety, im więcej dokumentów poddanych analizie tym prawdopodobieństwo wystąpienia błędu jest większe.
+Popularna biblioteka NLTK do analizy języka naturalnego dla Pythona wydaje się uszkodzona w przypadku algorymtu grupowania KMeans. Czasem zdarza się, że pojawia sie błąd związany z centrum pustego klastra. Niestety, jest to asercja więc natychmiast przerywa działanie programu. Sugerowane rozwiązanie również nie zdaje egzaminu. Niestety, im więcej dokumentów poddanych analizie tym prawdopodobieństwo wystąpienia błędu jest większe. Poza tym NLTK świetnie się nadaje do tworzenia programów do analizy języka naturalnego. W połączeniu z językiem Python, daje potężne narzędzie w którym szybko i łatwo można testować różne metody i algorytmy w celu rozwiązania problemu, bez niepotrzebnego wnikania w szczegóły implementacyjne.
 \begin{quotation}
 Error: no centroid defined for empty cluster. \\
 Try setting argument avoid\_empty\_clusters to True \\
 (...) \\
 AssertionError
 \end{quotation}
+
+Testy wykazały, że wartościowanie tagów HTML bardzo pozytywnie wpływają na wynik grupowania. Bez zastosowania wartościowania błędy popełnianie przez algorytm są bardzo duże. Wykorzystanie tagów H1 i TITLE to najprostsza metoda wykorzystania struktury dokumentu jako dodatkowego źródła informacji o dokumencie. Prawdopodobnie w przypadku większej liczby dokumentów, analiza większej liczby tagów mogła by dodatkowo poprawić wynik.
+
 
 Gdyby nie problemy z biblioteką, projekt w mojej ocenie można by uznać za w pełni udany. Projekt wykorzystauje zarówno treść dokumentu a także w przypadku HMTL strukturę. 
 

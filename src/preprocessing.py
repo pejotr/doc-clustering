@@ -128,7 +128,7 @@ def cluster(documents, terms, mostfreq, groups, use_cosine, repeats):
         clusterer = KMeansClusterer(groups, cosine_distance, repeats)
     else :
         logging.info("Using euclidean similarity function")
-        clusterer = KMeansClusterer(groups, euclidean_distance, repeats, avoid_empty_clusters = True)
+        clusterer = KMeansClusterer(groups, euclidean_distance, repeats) # NLTK on Ubuntu doesn't accept accept avoid_empty_clusters = True
 
     clusters  = clusterer.cluster(vectors, True, trace = False)
 
