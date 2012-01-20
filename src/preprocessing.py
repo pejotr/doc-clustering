@@ -15,6 +15,19 @@ from nltk.stem import PorterStemmer
 from nltk.corpus import stopwords
 from nltk.probability import FreqDist
 
+from Bio.Cluster import *
+
+DEF_USE_EUCLIDEAN      = 'e' 
+DEF_USE_CORRELATION    = 'c'
+DEF_USE_ABSCORRELATION = 'a'
+DEF_USE_UNCCORRELATION = 'u'
+DEF_USE_SPEARMAN       = 's'
+DEF_USE_KENDALL        = 'k'
+DEF_USE_MANHATTAN      = 'b'
+
+DEF_USE_ARITHMETIC     = 'a'
+DEF_USE_MEDIAN         = 'm'
+
 def compute_tfidf(document, documents):
     logging.info("Computing tfidf values for document: " + document['docname'])
 
@@ -110,7 +123,7 @@ def process_documents(path, html_conf):
 
     return documents, allfreq
 
-def cluster(documents, terms, mostfreq, groups, use_cosine, repeats):
+def cluster(documents, terms, mostfreq, groups, distfun, repeats, centrfun ):
     logging.info("Performing clustering procedure")
 
     order = [ x[0] for x in terms.items()[:mostfreq] ]
@@ -120,9 +133,12 @@ def cluster(documents, terms, mostfreq, groups, use_cosine, repeats):
 
     for key, doc in documents.iteritems():
         logging.info("Creating documnet vector for " + key )
-        vectors[len(vectors):] = [ numpy.array([ doc['tfidf'][o] for o in order ]) ]  # posortowane alfabetycznie termy do numpy.array'a
+#        vectors[len(vectors):] = [ numpy.array([ doc['tfidf'][o] for o in order ]) ]  # posortowane alfabetycznie termy do numpy.array'a
+        
+        vectors[len(vectors):] = [ [ doc['tfidf'][o] for o in order ] ]  # posortowane alfabetycznie termy do numpy.array'a
         docnames[len(docnames):] = [key]
 
+    """
     if use_cosine :
         logging.info("Using cosine similarity function")
         clusterer = KMeansClusterer(groups, cosine_distance, repeats)
@@ -132,6 +148,12 @@ def cluster(documents, terms, mostfreq, groups, use_cosine, repeats):
 
     clusters  = clusterer.cluster(vectors, True, trace = False)
 
+    clustering_result = zip(docnames, clusters)
+    """
+
+    logging.info("Using euclidean similarity function")
+    clusters, error, nfound = kcluster(vectors, nclusters=groups, dist=distfun, npass=repeats, method=centrfun)
+    
     clustering_result = zip(docnames, clusters)
     return clustering_result
 
