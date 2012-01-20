@@ -3,14 +3,6 @@ import logging
 import preprocessing
 import argparse
 
-DEF_HTML_USE_TAGS      = False
-DEF_HTML_TITLE_WEIGHT  = 1 
-DEF_HTML_H1_WEIGHT     = 1 
-DEF_TOP_FREQ_TERMS     = 2000
-DEF_GROUP_CNT          = 3
-
-DEF_REPEATS            = 20
-
 def main(argv):
     logging.basicConfig(format='%(levelname)s:%(message)s', level=logging.DEBUG)
     
@@ -54,19 +46,19 @@ def main(argv):
                        help='use median to find cluster center')
     # CLUSTER CENTER METHOD ------- }
 
-    parser.add_argument('--title', dest='html_title_weight', action='store', type=int, default=DEF_HTML_TITLE_WEIGHT, 
+    parser.add_argument('--title', dest='html_title_weight', action='store', type=int, default=preprocessing.DEF_HTML_TITLE_WEIGHT, 
                        help='title weight (default: 1)')
 
-    parser.add_argument('--h1', dest='html_h1_weight', action='store', type=int, default=DEF_HTML_TITLE_WEIGHT, 
+    parser.add_argument('--h1', dest='html_h1_weight', action='store', type=int, default=preprocessing.DEF_HTML_TITLE_WEIGHT, 
                        help='title weight (default: 1)')
 
-    parser.add_argument('--freq', dest='top_freq_terms', action='store', type=int, default=DEF_TOP_FREQ_TERMS, 
+    parser.add_argument('--freq', dest='top_freq_terms', action='store', type=int, default=preprocessing.DEF_TOP_FREQ_TERMS, 
                        help='number of top fequent terms for clustering (default: 2000)')
     
-    parser.add_argument('--groups', dest='group_cnt', action='store', type=int, default=DEF_GROUP_CNT, 
+    parser.add_argument('--groups', dest='group_cnt', action='store', type=int, default=preprocessing.DEF_GROUP_CNT, 
                        help='number of groups (default: 3)')
 
-    parser.add_argument('--repeats', dest='repeats', action='store', type=int, default=DEF_REPEATS, 
+    parser.add_argument('--repeats', dest='repeats', action='store', type=int, default=preprocessing.DEF_REPEATS, 
                        help='repeats in KMeans algorithm (default: 20)')
 
     args = parser.parse_args()

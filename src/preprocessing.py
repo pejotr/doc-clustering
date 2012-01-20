@@ -17,6 +17,14 @@ from nltk.probability import FreqDist
 
 from Bio.Cluster import *
 
+DEF_HTML_USE_TAGS      = False
+DEF_HTML_TITLE_WEIGHT  = 1 
+DEF_HTML_H1_WEIGHT     = 1 
+DEF_TOP_FREQ_TERMS     = 2000
+DEF_GROUP_CNT          = 3
+
+DEF_REPEATS            = 20
+
 DEF_USE_EUCLIDEAN      = 'e' 
 DEF_USE_CORRELATION    = 'c'
 DEF_USE_ABSCORRELATION = 'a'
@@ -133,23 +141,8 @@ def cluster(documents, terms, mostfreq, groups, distfun, repeats, centrfun ):
 
     for key, doc in documents.iteritems():
         logging.info("Creating documnet vector for " + key )
-#        vectors[len(vectors):] = [ numpy.array([ doc['tfidf'][o] for o in order ]) ]  # posortowane alfabetycznie termy do numpy.array'a
-        
         vectors[len(vectors):] = [ [ doc['tfidf'][o] for o in order ] ]  # posortowane alfabetycznie termy do numpy.array'a
         docnames[len(docnames):] = [key]
-
-    """
-    if use_cosine :
-        logging.info("Using cosine similarity function")
-        clusterer = KMeansClusterer(groups, cosine_distance, repeats)
-    else :
-        logging.info("Using euclidean similarity function")
-        clusterer = KMeansClusterer(groups, euclidean_distance, repeats) # NLTK on Ubuntu doesn't accept accept avoid_empty_clusters = True
-
-    clusters  = clusterer.cluster(vectors, True, trace = False)
-
-    clustering_result = zip(docnames, clusters)
-    """
 
     logging.info("Using euclidean similarity function")
     clusters, error, nfound = kcluster(vectors, nclusters=groups, dist=distfun, npass=repeats, method=centrfun)
