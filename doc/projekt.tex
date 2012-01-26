@@ -67,19 +67,12 @@ Dostępne parametry modyfikujące działanie algorytmu wyświetlane są po wykon
 
 Modyfikacje funkcji odległości:
 \begin{description}
-\item [\texttt{-{}-euclidean}] 
-\item [\texttt{-{}-correlation}] 
-\item [\texttt{-{}-abscorrelation}]
-\item [\texttt{-{}-uncorrelation}]
-\item [\texttt{-{}-spearman}]
-\item [\texttt{-{}-kendall}]
-\item [\texttt{-{}-manhattan}]
+\item [\texttt{-{}-euclidean}] [\texttt{-{}-correlation}] [\texttt{-{}-abscorrelation}] [\texttt{-{}-uncorrelation}] [\texttt{-{}-spearman}] [\texttt{-{}-kendall}] [\texttt{-{}-manhattan}]
 \end{description}
 
 Metody wyboru nowego jądra klastra:
 \begin{description}
-\item [\texttt{-{}-arithmetic}] 
-\item [\texttt{-{}-median}] 
+\item [\texttt{-{}-arithmetic}] [\texttt{-{}-median}] 
 \end{description}
 W folderze data/bag-of-words dostepne są 2 pliki z dokumentami przeznaczonymi do grupowania, pobrane ze strony http://archive.ics.uci.edu/ml/datasets/Bag+of+Words. Cały zbiór zawiera 1500 dokumentów. Na potrzeby projektu, skróciłem go do 108. Format danych zawarty jest na wspomnianej wyżej stronie. Do współpracy z projektem, konieczne jest przetworzenie obu plików w postać dokumentów. W tym celu powstał prosty skrypt \emph{bag2files.py} który w katalogu \emph{files}(trzeba utworzyć ręcznie) umieści wygenerowane dokumenty. Niestety, są to czysto tekstowe dokumenty zatem wartościowanie HMTL nie ma sensu.
 
@@ -162,7 +155,7 @@ Dokumenty & Grupa \\ \hline
 \end{center}
 \end{table}
 
-Ilość błędów popełnianych w procesie grupowania i czas działania programu w dużym stopniu zależą od wyboru algorytmu wybierania nowego środka grupy i algorytmu obliczającego podobieństwo między dokumentami. Poniższy wykres przedstawia jakość grupowania, obliczoną na podstawie współczynnika Purity przy wykorzystaniu różnych algorytmów obliczania podobieństwa. Wszystkie testy zostały wykonane przy założeniu istnienia 5 grup oraz bez wykorzystania tagów HTML.
+Ilość błędów popełnianych w procesie grupowania i czas działania programu w dużym stopniu zależą od wyboru algorytmu wybierania nowego środka grupy i algorytmu obliczającego podobieństwo między dokumentami. Poniższy wykres przedstawia jakość grupowania, obliczoną na podstawie współczynnika Purity przy wykorzystaniu różnych algorytmów obliczania podobieństwa. Wszystkie testy zostały wykonane przy założeniu istnienia 5 grup oraz bez wykorzystania tagów HTML przy domyślnej liczbie powtórzeń równej 20.
 
 \begin{center}
 \begin{tikzpicture}
@@ -256,6 +249,8 @@ Dokumenty & Grupa \\ \hline
 \end{center}
 \end{table}
 
+\subsubsection{Czas działania}
+
 Czas działania poszczególnych metod obliczania odlgłości między dokumentami jest bardzo zróżnicowany. Za każdym razem najdłużej trawało obliczenie metodą Kendall'a. Dla ostatniego przypadku, rozkład czasów został przedstawiony poniżej:
 
 \begin{center}
@@ -282,6 +277,23 @@ Czas działania poszczególnych metod obliczania odlgłości między dokumentami
 \end{tikzpicture}
 \end{center}
 
+\subsubsection{Wpływ liczby powtórzeń}
+Aby zbadać wpływ liczby powtórzeń w algorytmie KMeans na ostateczny wynik grupowania wykorzystałem algorytm correlation i średnią arytmetyczną do wyboru nowego punktu centralnego. Wartość purity jest uśredniona z 5 uruchomień programu. 
+
+\begin{center}
+\begin{tikzpicture}
+\begin{axis} [
+    ylabel={purity},
+    point meta=x, 
+    nodes near coords, 
+]
+\addplot+[sharp plot] coordinates {(1, 0.7125) (2, 0.7666) (4,0.8055) (10, 0.8457) (20, 0.8750) (100, 0.8916) (500, 0.9083)};
+\end{axis}
+\end{tikzpicture}
+\end{center}
+
+Zwiększenie ilości powtórzeń wpływa na poprawę jakości grupowania. Widać, że do pewnego momentu są to względnie duże różnice, jednak różnica pomiędzy 20 a 500 powtórzeniami to zaledwie 0.0333.
+
 \section{Wnioski}
 Mimo dość prostego algorytmu, grupowanie odbywa się lepiej niż początkowo zakładałem. W szczególności, do dobrej grupy trafiają wszystkie dokumenty zawierające internetowe strony domowe. W czasie wielu prób które przeprowadziłem w celu odnalezienie parametrów które zbliżyłyby wynik działania programu do ręcznego grupowania, zauważyłem że często do nie odpowiedniej klasy trafia dokument case32.txt. Mimo że treść tego pliku, dla człowieka, zawiera informacje dotyczące kawy, to dla zaprezentowanego algorytmu nie jest to takie oczywiste i pasuje bardziej do informacji finansowych lub kodu Pascala. Jest to zapewne spowodowane tym, że case32.txt zawiera informacje statystyczne, pogodowe. Algorytm nie jest na tyle inteligentny, żeby zrozumieć choć częściowo sens dokumentu i stąd błędne przypisanie.
 
@@ -296,6 +308,7 @@ Ostatecznie, najlepsza pod tym wzgledem okazała się wykorzystana biblioteka Py
 
 Testy wykazały, że wartościowanie tagów HTML pozytywnie wpływają na wynik grupowania. Bez zastosowania wartościowania błędy popełnianie przez algorytm nie były duże, ale dodatkowa informacja pomogła. Wykorzystanie tagów H1 i TITLE to najprostsza metoda wykorzystania struktury dokumentu jako dodatkowego źródła informacji o dokumencie. Prawdopodobnie w przypadku większej liczby dokumentów, analiza większej liczby tagów mogła by dodatkowo poprawić wynik.
 
+Zwiększona ilość powtórzeń, sprawia że "czystość" ( współczynnik \emph{purity}) grupowania zbliża się do idealnej wartości 1.0. Widać również, że po przekroczeniu pewnej granicy, mimo zwiększania ilości powtórzeń, nie uzyskuje się znacznej poprawy działania programu.
 
 \section{Poprawność grupowania}
 Znanych jest kilka metod sprawdzenia skuteczności, poprawności grupowania. Jednym z nich jest entropia. Entropia grupy \( C_{i} \) o rozmiarze \( n_{i} \) zdefiniowana jest następująco:
