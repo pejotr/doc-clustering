@@ -144,9 +144,8 @@ def cluster(documents, terms, mostfreq, groups, distfun, repeats, centrfun ):
         vectors[len(vectors):] = [ [ doc['tfidf'][o] for o in order ] ]  # posortowane alfabetycznie termy do numpy.array'a
         docnames[len(docnames):] = [key]
 
-    logging.info("Using euclidean similarity function")
     clusters, error, nfound = kcluster(vectors, nclusters=groups, dist=distfun, npass=repeats, method=centrfun)
-    
+
     clustering_result = zip(docnames, clusters)
     return clustering_result
 

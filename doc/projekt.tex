@@ -3,7 +3,14 @@
 \usepackage[utf8]{inputenc}
 \usepackage[T1]{fontenc}
 \usepackage{amsmath}
+\usepackage{float}
+\usepackage{hyperref}
+\usepackage{pgfplots}
+\usepackage{graphicx}
 
+\restylefloat{table}
+
+\pgfplotsset{compat=1.3}
 \begin{document}
 \title{WEDT - DOKUMENTACJA KOŃCOWA}
 \author{Piotr Doniec}
@@ -38,7 +45,9 @@ Jest to jeden z najprostszych algorytmów uczących się bez wykorzystania naucz
 \section{Narzędzia}
 Projekt został zaimplementowany w języku Python. Wynika to z łatwości języka i ilością dostępnych bibliotek zapewniających stopień abstrakcji umożliwiający skupienie się na rozwiązaniu problemu bez koniczności implementacji algorytmów składowych.
 
-Głównym ogniwem jest przedstawiona na wykładzie biblioteka nltk zapewniająca większość wymaganej funkcjonalności wykorzystanej w projeckie. Z poziomu nltk możliwa jest między innymi tokenizacja tekstu, dostęp do korpusów oraz stemming wyrazów. Zaimplementowane są także najpopularniejsze funkcje obliczające podobieństwo między dokumentami oraz algorytmy grupowania. Dodatkowo wykoszystano bibliotekę lxml która umożliwia w łatwe i szybkie parsowanie dokumentów HTML.
+Głównym ogniwem jest przedstawiona na wykładzie biblioteka nltk zapewniająca większość wymaganej funkcjonalności wykorzystanej w projeckie. Z poziomu nltk możliwa jest między innymi tokenizacja tekstu, dostęp do korpusów oraz stemming wyrazów. Zaimplementowane są także najpopularniejsze funkcje obliczające podobieństwo między dokumentami oraz algorytmy grupowania. Dodatkowo wykoszystano bibliotekę lxml która umożliwia w łatwe i szybkie parsowanie dokumentów HTML oraz PyCluster do grupowania.
+PyCluster to niezależna i dedykowana biblioteka dla Python wyłącznie do przeprowadzania procesu grupowania. Można ją zainstalować jako samodzielny pakiet lub wraz z biblioteka Biopython. Projekt wykorzystuje drugą metod z prostego powodu jakim jest dostępność pakietu Biopython w repozytoriach Ubuntu i Arch Linux.
+To co odróżnia PyCluster od mechnizmu grupowania dostepnego w NLTK to zdecydowanie większa ilość opcji dla algorytmu KMeans. Oprócz wyboru funkcji obliczania odległości między grupowanymi dokumentami i ilością powtórzeń można także wybrać metodę wyboru środka nowego klastra - środek arytmetyczny lub mediana. Dodatkowo oprócz podobieństwa Euklidesowego, dostępnych jest wiecej wbudowanych funkcji odległości.
 
 Kod projekt jest objęty systemem kontroli wersji i dostępny pod adresem: http://github.com/pejotr/doc-clustering
 
@@ -49,7 +58,6 @@ Dostępne parametry modyfikujące działanie algorytmu wyświetlane są po wykon
 \begin{description}
 \item [\texttt{-h --help}] Wyświetla wszystkie opcje programu wraz z krótkim opisem
 \item [\texttt{-{}-usehtml}] Używanie tagów HTML do lepszej oceny treści dokumentu, \emph{domyślnie False}
-\item [\texttt{-{}-cosine}] Użycie podobieństwa cosinusowego, zamiast domyślnego euklidesowego
 \item [\texttt{-{}-title}] Waga słów zawartych pomiędzy znacznikami <title></title>, \emph{domyślnie 1}
 \item [\texttt{-{}-h1}] Waga słów zawartych pomiędzy znacznikami <h1></h1>, \emph{domyślnie 1}
 \item [\texttt{-{}-freq}] Liczba najpopularniejszych wyrazów, wykorzystanych w procesie grupowania
@@ -57,14 +65,31 @@ Dostępne parametry modyfikujące działanie algorytmu wyświetlane są po wykon
 \item [\texttt{-{}-repeats}] Liczba powtórzeń w algorytmie KMeans
 \end{description}
 
+Modyfikacje funkcji odległości:
+\begin{description}
+\item [\texttt{-{}-euclidean}] 
+\item [\texttt{-{}-correlation}] 
+\item [\texttt{-{}-abscorrelation}]
+\item [\texttt{-{}-uncorrelation}]
+\item [\texttt{-{}-spearman}]
+\item [\texttt{-{}-kendall}]
+\item [\texttt{-{}-manhattan}]
+\end{description}
+
+Metody wyboru nowego jądra klastra:
+\begin{description}
+\item [\texttt{-{}-arithmetic}] 
+\item [\texttt{-{}-median}] 
+\end{description}
 W folderze data/bag-of-words dostepne są 2 pliki z dokumentami przeznaczonymi do grupowania, pobrane ze strony http://archive.ics.uci.edu/ml/datasets/Bag+of+Words. Cały zbiór zawiera 1500 dokumentów. Na potrzeby projektu, skróciłem go do 108. Format danych zawarty jest na wspomnianej wyżej stronie. Do współpracy z projektem, konieczne jest przetworzenie obu plików w postać dokumentów. W tym celu powstał prosty skrypt \emph{bag2files.py} który w katalogu \emph{files}(trzeba utworzyć ręcznie) umieści wygenerowane dokumenty. Niestety, są to czysto tekstowe dokumenty zatem wartościowanie HMTL nie ma sensu.
 
 W folderze data/dev-data umieściłem dokumenty pobrane ze strony przedmiotu, ale pogrupowane samodzielnie. Numery dokumentów są zachowane, zatem kawa32.txt odpowiada plikowi case32.txt.
 
 \section{Testy}
+\subsection{NLTK (nieaktualne)}
 Weryfikacja poprawności działania algorytmu została przeprowadzona poprzez porównanie wyniku działania programu z recznym pogrupowaniem dokumentów dokonanym przeze mnie. Ze względu na liczbę do testów posłuzyły dokumenty dostępne na stronie przedmiotu. Zauważono, że domyślne wartości i wykorzystanie najprostszej funkcji podobieństwa ( podobieństwa Euklidesowego ) nie daje satysfakcjonujących wyników. Najlepszy rezultat uzyskano przy wykorzystananiu podobieństwa cosinusowego, wartościowowaniu znacznika <title></title> z wagą 7 przy 50 powtórzeniach. Odpowiada to uruchomieniu programu z następującymi parametrami: \emph{python2 src/main.py data/dev-data/ -{}-cosine -{}-usehtml -{}-groups=5  -{}-title=7}. Wynik jest przedstawiony w Table 1. 
 
-\begin{table}[h]
+\begin{table}[H]
 \begin{center}
 \begin{tabular}{ | c | c | }
 \hline
@@ -81,7 +106,7 @@ Dokumenty & Grupa \\ \hline
 
 Zwiększenie ilości grup do np. 7, sprawia że algorytm rozdzielił informajce dotyczące kawy do wiekszej liczby grup. Pozostałe dokumenty nadal pozostają w tym samym klastrze (Tabela 2).
 
-\begin{table}[h]
+\begin{table}[H]
 \begin{center}
 \begin{tabular}{ | c | c | }
 \hline
@@ -100,7 +125,7 @@ Dokumenty & Grupa \\ \hline
 
 Uruchomienie programu w domyślnej konfigracji tj. bez wartościowania tagów HTML, z podobieństwem Euclidesowym pokazuje jak istotne jest wykorzystanie dodatakowych informacji o strukturze dokumentu (Tablica 3). Widać, że większość dokumentów dotycząca kawy została zakwalifikowana razem z dokumentami na temat finansów.
 
-\begin{table}[h]
+\begin{table}[H]
 \begin{center}
 \begin{tabular}{ | c | c | }
 \hline
@@ -119,25 +144,169 @@ Dokumenty & Grupa \\ \hline
 
 Ponieważ punkty rdzeniowe grup wybierane są losowo, wyniki przeprowadzone na innym komputerze w innym czasie mogą się nieznacznie różnić od zaprezentowanych.
 
+\subsection{PyCluster}
+Brak podobieństwa cosinusowego, znanego z NLTK, zmusił do poszukiwań innej kombinacji parametrów wejsciowych dającej zamierzony efekt. W przypadku danych ze strony przedmiotu, najlepiej spisała sie funkcja \emph{correlation}, dając następujący wynik grupowania:
+
+\begin{table}[H]
+\begin{center}
+\begin{tabular}{ | c | c | }
+\hline
+Dokumenty & Grupa \\ \hline
+44, 47, 21, 22, 27, 29, 30, 35-39, 41 & 0 \\ \hline
+42, 43, 45, 46, 23-26, 28, 31,  & 1 \\ \hline
+32, 17-20 & 2 \\ \hline
+48, 5-13,  & 3 \\ \hline
+1-4, 4-16 & 4 \\ \hline
+\end{tabular}
+\caption{\emph{python main.py dev-data/ -{}-correlation --arithmetic -{}-groups=5 -{}-usehtml -{}-title=5}}
+\end{center}
+\end{table}
+
+Ilość błędów popełnianych w procesie grupowania i czas działania programu w dużym stopniu zależą od wyboru algorytmu wybierania nowego środka grupy i algorytmu obliczającego podobieństwo między dokumentami. Poniższy wykres przedstawia jakość grupowania, obliczoną na podstawie współczynnika Purity przy wykorzystaniu różnych algorytmów obliczania podobieństwa. Wszystkie testy zostały wykonane przy założeniu istnienia 5 grup oraz bez wykorzystania tagów HTML.
+
+\begin{center}
+\begin{tikzpicture}
+\begin{axis}[
+    symbolic x coords={ARITHMETIC}, 
+    ybar,
+    ylabel={współczynnik Purity},
+    nodes near coords, 
+    bar width = 20pt, 
+    point meta=y, 
+    xtick=data,
+    legend style={at={(0.5,-0.25)},
+    anchor=north,legend columns=-1},
+]
+\addplot coordinates {(ARITHMETIC,0.8958)};
+\addplot coordinates {(ARITHMETIC,0.7708)};
+\addplot coordinates {(ARITHMETIC,0.8542)};
+\addplot coordinates {(ARITHMETIC,0.5208)};
+\addplot coordinates {(ARITHMETIC,0.4792)};
+\addplot coordinates {(ARITHMETIC,0.8542)};
+\legend{corr,euclidean,abscorr,spearman,kendall,manhattan}
+\end{axis}
+\end{tikzpicture}
+\end{center}
+
+
+\begin{center}
+\begin{tikzpicture}
+\begin{axis}[
+    symbolic x coords={MEDIAN}, 
+    ybar,
+    ylabel={współczynnik Purity},
+    nodes near coords, 
+    bar width = 20pt, 
+    point meta=y, 
+    xtick=data,
+    legend style={at={(0.5,-0.25)},
+    anchor=north,legend columns=-1},
+]
+\addplot coordinates {(MEDIAN,0.9792)};
+\addplot coordinates {(MEDIAN,0.9792)};
+\addplot coordinates {(MEDIAN,0.9503)};
+\addplot coordinates {(MEDIAN,0.9167)};
+\addplot coordinates {(MEDIAN,0.9167)};
+\addplot coordinates {(MEDIAN,0.7917)};
+\legend{corr,euclidean,abscorr,spearman,kendall,manhattan}
+\end{axis}
+\end{tikzpicture}
+\end{center}
+
+Jak widać na powyższym wykresie wyniki są bardzo blisko rozwiązania bardzo dobrego. Do wykorzystania, została jeszcze funkcja wartościowania tagów HTML. Przy założeniu, że każdy term ze znacznika <title></title> jest wart 5 razy więcej niż inne słowo ( -{}-usehtml -{}-title=5 ), wyniki są następujące:
+
+\begin{center}
+\begin{tikzpicture}
+\begin{axis}[
+    symbolic x coords={MEDIAN}, 
+    ybar,
+    ylabel={współczynnik Purity},
+    nodes near coords, 
+    bar width = 20pt, 
+    point meta=y, 
+    xtick=data,
+    legend style={at={(0.5,-0.25)},
+    anchor=north,legend columns=-1},
+]
+\addplot coordinates {(MEDIAN,1.0)};
+\addplot coordinates {(MEDIAN,1.0)};
+\addplot coordinates {(MEDIAN,1.0)};
+\addplot coordinates {(MEDIAN,0.9167)};
+\addplot coordinates {(MEDIAN,0.9167)};
+\addplot coordinates {(MEDIAN,0.8750)};
+\legend{corr,euclidean,abscorr,spearman,kendall,manhattan}
+\end{axis}
+\end{tikzpicture}
+\end{center}
+
+Ostatecznie najlepsze rozwiązanie jakie udało się osiągnąć wykorzystuje jedną z funkcji odległości \emph{correlation, euclidean, abscorrelation} i medianę do wyboru punktu centralnego klastra. Zmiana metody, spowodowała, że dane zostały pogrupowane dokładnie tak jak zrobiłby to człowiek. Początkowo miałem wątpliwości, czy może jest to bezpośrednio związane z nadanymi przeze mnie nazwami plików, a tym samym kolejnością wczytywania. Jednak obawy zostały rozwiązane po napisaniu i uruchomieniu prostego skryptu ktory poprzedzał nazwę pliku losowym numerem - grupowanie nadal było poprawne.
+
+\begin{table}[H]
+\begin{center}
+\begin{tabular}{ | c | c | }
+\hline
+Dokumenty & Grupa \\ \hline
+21-41 & 0 \\ \hline
+5-13 & 1 \\ \hline
+1-4, 14-16 & 2 \\ \hline
+17-20 & 3 \\ \hline
+42-48 & 4 \\ \hline
+\end{tabular}
+\caption{\emph{python main.py dev-data/ -{}-correlation -{}-median -{}-groups=5 -{}-usehtml -{}-title=5}}
+\end{center}
+\end{table}
+
+Czas działania poszczególnych metod obliczania odlgłości między dokumentami jest bardzo zróżnicowany. Za każdym razem najdłużej trawało obliczenie metodą Kendall'a. Dla ostatniego przypadku, rozkład czasów został przedstawiony poniżej:
+
+\begin{center}
+\begin{tikzpicture}
+\begin{axis}[
+    symbolic x coords={MEDIAN}, 
+    ybar,
+    ylabel={czas działania (s)},
+    nodes near coords, 
+    bar width = 20pt, 
+    point meta=y, 
+    xtick=data,
+    legend style={at={(0.5,-0.25)},
+    anchor=north,legend columns=-1},
+]
+\addplot coordinates {(MEDIAN,4.325)};
+\addplot coordinates {(MEDIAN,4.53)};
+\addplot coordinates {(MEDIAN,4.60)};
+\addplot coordinates {(MEDIAN,11.37)};
+\addplot coordinates {(MEDIAN,408.01)};
+\addplot coordinates {(MEDIAN,4.02)};
+\legend{corr,euclidean,abscorr,spearman,kendall,manhattan}
+\end{axis}
+\end{tikzpicture}
+\end{center}
+
 \section{Wnioski}
 Mimo dość prostego algorytmu, grupowanie odbywa się lepiej niż początkowo zakładałem. W szczególności, do dobrej grupy trafiają wszystkie dokumenty zawierające internetowe strony domowe. W czasie wielu prób które przeprowadziłem w celu odnalezienie parametrów które zbliżyłyby wynik działania programu do ręcznego grupowania, zauważyłem że często do nie odpowiedniej klasy trafia dokument case32.txt. Mimo że treść tego pliku, dla człowieka, zawiera informacje dotyczące kawy, to dla zaprezentowanego algorytmu nie jest to takie oczywiste i pasuje bardziej do informacji finansowych lub kodu Pascala. Jest to zapewne spowodowane tym, że case32.txt zawiera informacje statystyczne, pogodowe. Algorytm nie jest na tyle inteligentny, żeby zrozumieć choć częściowo sens dokumentu i stąd błędne przypisanie.
 
-Popularna biblioteka NLTK do analizy języka naturalnego dla Pythona wydaje się uszkodzona w przypadku algorymtu grupowania KMeans. Czasem zdarza się, że pojawia sie błąd związany z centrum pustego klastra. Niestety, jest to asercja więc natychmiast przerywa działanie programu. Sugerowane rozwiązanie również nie zdaje egzaminu. Niestety, im więcej dokumentów poddanych analizie tym prawdopodobieństwo wystąpienia błędu jest większe. Poza tym NLTK świetnie się nadaje do tworzenia programów do analizy języka naturalnego. W połączeniu z językiem Python, daje potężne narzędzie w którym szybko i łatwo można testować różne metody i algorytmy w celu rozwiązania problemu, bez niepotrzebnego wnikania w szczegóły implementacyjne.
-\begin{quotation}
-Error: no centroid defined for empty cluster. \\
-Try setting argument avoid\_empty\_clusters to True \\
-(...) \\
-AssertionError
-\end{quotation}
+Wykorzystanie PyCluster zamiast mechanizmu NLTK w celu grupowania zwróciło mi uwagę na komplikacje procesu związanego z analizą dokumentów. Mimo że korzystałem tylko z jednego algorytmu (KMeans), to ilość kombinacji opcji jest bardzo duża. Trudnym zadaniem wydaje się dobranie odpowiedniej funkcji podobieństwa. W zależności od użytej funkcji czas wykonania i wyniki potrafią się bardzo różnić. Najdłuższe obliczeniowo są funkcje Kendall'a i Spearman'a.
+Aby być w stanie efektywnie przeprowadzać proces grupowania, potrzebna jest wiedza na temat przydatności w danej sytuacji konkretnej funkcji podobieństwa.
 
-Testy wykazały, że wartościowanie tagów HTML bardzo pozytywnie wpływają na wynik grupowania. Bez zastosowania wartościowania błędy popełnianie przez algorytm są bardzo duże. Wykorzystanie tagów H1 i TITLE to najprostsza metoda wykorzystania struktury dokumentu jako dodatkowego źródła informacji o dokumencie. Prawdopodobnie w przypadku większej liczby dokumentów, analiza większej liczby tagów mogła by dodatkowo poprawić wynik.
+Popularna biblioteka NLTK do analizy języka naturalnego dla Pythona wydaje się uszkodzona w przypadku algorytmu grupowania KMeans. Czasem zdarza się, że pojawia sie błąd związany z centrum pustego klastra. Niestety, jest to asercja więc natychmiast przerywa działanie programu. Sugerowane rozwiązanie również nie zdaje egzaminu. Niestety, im więcej dokumentów poddanych analizie tym prawdopodobieństwo wystąpienia błędu jest większe. Poza tym NLTK świetnie się nadaje do tworzenia programów do analizy języka naturalnego. W połączeniu z językiem Python, daje potężne narzędzie w którym szybko i łatwo można testować różne metody i algorytmy w celu rozwiązania problemu, bez niepotrzebnego wnikania w szczegóły implementacyjne.
 
+Inna biblioteka z której funkcjonalności chciałem skorzystać w celu pogrupowania dokumentów, \emph{scipy}, również cierpaniała na podobną przypadłość co NLTK. Z jednej strony sygnalizowane jest to jako problem. Z drugiej sugeruje się, że funkcja jest względnie niskopoziomowa i jest to zamierzony rezultat, a do obsługi pustych klastrów należałoby wykorzystać zewnętrzną strategię. 
 
-Gdyby nie problemy z biblioteką, projekt w mojej ocenie można by uznać za w pełni udany. Projekt wykorzystauje zarówno treść dokumentu a także w przypadku HMTL strukturę. 
+Ostatecznie, najlepsza pod tym wzgledem okazała się wykorzystana biblioteka PyCluster. Nie sprawia wymienionych problemów i pod względem grupowania oferuje o wiele bogatszy interfejs niż \emph{scipy} i \emph{nltk}.
+
+Testy wykazały, że wartościowanie tagów HTML pozytywnie wpływają na wynik grupowania. Bez zastosowania wartościowania błędy popełnianie przez algorytm nie były duże, ale dodatkowa informacja pomogła. Wykorzystanie tagów H1 i TITLE to najprostsza metoda wykorzystania struktury dokumentu jako dodatkowego źródła informacji o dokumencie. Prawdopodobnie w przypadku większej liczby dokumentów, analiza większej liczby tagów mogła by dodatkowo poprawić wynik.
+
 
 \section{Poprawność grupowania}
 Znanych jest kilka metod sprawdzenia skuteczności, poprawności grupowania. Jednym z nich jest entropia. Entropia grupy \( C_{i} \) o rozmiarze \( n_{i} \) zdefiniowana jest następująco:
-\( E(C_{i}) = -\frac{1}{\log(c)}\sum_{h=1}^{k}\frac{n_i^h}{n_i}\log(\frac{n_i^h}{n_i}) \), gdzie \emph{c} jest ilością kategorii w zbiorze danych, a \( n_i^h  \) jest liczbą dokumentów z klasy \emph{h} przypisanych do grupy \emph{i}. Inny, prostszy algorytmy \emph{purity}, również wymagaja sklasyfikowanych danych. W związku z tym niemożliwe jest ocenienie jakości grupowania bez uprzedniej klasyfikacji. Można to zrobić tylko ręcznie, o ile zbiór danych nie jest zbyt duży.
+\( E(C_{i}) = -\frac{1}{\log(c)}\sum_{h=1}^{k}\frac{n_i^h}{n_i}\log(\frac{n_i^h}{n_i}) \), gdzie \emph{c} jest ilością kategorii w zbiorze danych, a \( n_i^h  \) jest liczbą dokumentów z klasy \emph{h} przypisanych do grupy \emph{i}. 
+
+Inny, prostszy algorytmy \emph{purity}, również wymaga sklasyfikowanych danych. Aby go obliczyć każdy z klastrów przypisywany jest do klasy do której należy większość jego elementów. W następnej kolejności sumowana jest liczba dokumentów które znalazły się w odpowiedniej grupie, a całość dzielona jest przez ilość wszystkich rozpatrywanych dokumentów. Współczynnik ten został wykorzystany w projekcie do sprawdzenia jakości grupowania, dla danych dostępnych na stronie przedmiotu. Niemożliwe jest ocenienie jakości grupowania bez uprzedniej klasyfikacji. Z tego powodu, powyższy test został przeprowadzony jedynie dla małej grupy dokumentów, które można było poklasyfikować ręcznie.
+
+\begin{center}
+\includegraphics[scale=0.5]{purity.png}
+\end{center}
+
 Mimo że w internecie, zdecydowanie bardziej powszechne są dane do klasyfikowania, można też znaleźć dane dedykowane do grupowania. Niestety trudno z nich skorzystać, gdyż nie udostępnione są jakiekolwiek dane na temat poprawnego grupowania. Sporo jest również danych w formie przygotowanej do obróbki w narzędziac bazodanowych. 
 Ze znalenioznych zbiorów dość ciekawym jest Bag-of-words, nie są to typowe dokumenty, a raczej jak wskazuje nazwa lista słów wraz z iloscią wystąpień i przynależnością do dokumentu. Oczywiście można przeprowadzić grupowanie takiego zbioru, jednak weryfikacja jest dość kłopotliwa.
 
@@ -148,5 +317,9 @@ A. Huang, \emph{Similarity Measures for Text Document Clustering}, Department of
 M. Steinbach, G. Karypis, V. Kumar, \emph{A Comparison of Document Clustering Techniques}, Department of Computer Science and Egineering, University of Minnesota
 \bibitem{Mann}
 C. Manning, H. Schütze, \emph{Foundations of Statistical Natural Language Processing},MIT Press, 1999
+\bibitem{NltkDoc}
+NLTK manual, \url{http://www.nltk.org/documentation}
+\bibitem{Pur}
+Evaluation of clustering , \url{http://nlp.stanford.edu/IR-book/html/htmledition/evaluation-of-clustering-1.html},Cambridge University Press, 2008
 \end{thebibliography}
 \end{document}

@@ -1,6 +1,7 @@
 import sys
 import logging
 import preprocessing
+import purity
 import argparse
 
 def main(argv):
@@ -9,7 +10,7 @@ def main(argv):
     parser = argparse.ArgumentParser(description='Cluster given HTML and plaintext documents.')
     parser.add_argument('datadir', metavar='datadir', help='directory where documents for clustering are stored')
 
-    parser.add_argument('--usehtml', dest='html_use_tags', action='store_true', default=DEF_HTML_USE_TAGS,
+    parser.add_argument('--usehtml', dest='html_use_tags', action='store_true', default=preprocessing.DEF_HTML_USE_TAGS,
                        help='use HMTL tags for text analysis (default: false)')
 
     # { ------- DISTANCE FUNCTION SETUP
@@ -34,7 +35,6 @@ def main(argv):
 
     dist_group.add_argument('--manhattan', dest='sim_fun', action='store_const', const=preprocessing.DEF_USE_MANHATTAN, 
                        help='use Manhattan similarity')
-
     # DISTANCE FUNCTION SETUP ------- }
 
     # { ------- CLUSTER CENTER METHOD
@@ -75,10 +75,14 @@ def main(argv):
 
     docs, terms = preprocessing.process_documents(argv[0], html_conf)
     result = preprocessing.cluster(docs, terms, top_freq_terms, group_cnt, use_simfun, repeats, center_method)
-    
-    r = sorted(result, key = lambda i: i[0])
+
+    r = sorted(result, key = lambda i: i[1])
+        
+
     print "\n".join( v[0] + ", " + str(v[1]) for v in r)
 
+    purity.purity(r, group_cnt)
+    
 
 if __name__ == "__main__" :
     main(sys.argv[1:])
